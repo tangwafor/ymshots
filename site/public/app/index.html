@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>YmShotS | App</title>
+<meta name="theme-color" content="#0A0A0A">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--accent:#E0943A;--bg:#0A0A0A;--surface:#111;--border:#1a1a1a;--text:#fff;--muted:rgba(255,255,255,0.4);--muted2:rgba(255,255,255,0.2)}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;-webkit-font-smoothing:antialiased}
+
+/* Layout */
+.app{display:flex;height:100vh}
+.sidebar{width:200px;background:#0D0D0D;border-right:1px solid var(--border);display:flex;flex-direction:column;user-select:none}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:40px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:12px}
+.content{flex:1;overflow:auto}
+
+/* Sidebar */
+.sb-logo{padding:16px 14px 12px;border-bottom:1px solid var(--border);cursor:pointer}
+.sb-logo-text{font-size:16px;font-weight:700;letter-spacing:-0.02em}
+.sb-tagline{font-size:10px;color:var(--muted2);margin-top:2px}
+.sb-nav{flex:1;padding:8px 6px;overflow-y:auto}
+.sb-section{font-size:9px;font-weight:600;color:var(--muted2);letter-spacing:.1em;padding:8px 10px 4px}
+.sb-item{display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;border:none;border-radius:5px;cursor:pointer;font-size:12px;text-align:left;color:var(--muted);background:transparent;border-left:2px solid transparent;transition:all .12s}
+.sb-item:hover{color:rgba(255,255,255,0.6)}
+.sb-item.active{color:var(--text);background:rgba(224,148,58,0.08);border-left-color:var(--accent)}
+.sb-icon{font-size:13px;width:18px;text-align:center;flex-shrink:0}
+.sb-user{padding:10px 14px;border-top:1px solid var(--border);font-size:11px}
+.sb-user-name{color:var(--muted)}
+.sb-badge{display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;font-weight:600;margin-top:2px}
+
+/* Topbar */
+.tb-view{font-weight:600;color:rgba(255,255,255,0.7)}
+.tb-sig{font-size:10px;color:rgba(255,255,255,0.25)}
+.tb-btn{padding:3px 10px;border-radius:4px;font-size:11px;border:1px solid #222;cursor:pointer;color:var(--muted);background:transparent}
+.tb-btn:hover{color:var(--text)}
+
+/* Views */
+.view{display:none;height:100%}
+.view.active{display:flex;flex-direction:column}
+
+/* Splash */
+.splash{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;transition:opacity .6s}
+.splash.hidden{opacity:0;pointer-events:none}
+.splash-logo{font-size:48px;font-weight:800;letter-spacing:-0.03em;opacity:0;animation:fadeUp .8s ease .2s forwards}
+.splash-tag{font-size:14px;color:var(--muted2);letter-spacing:.1em;margin-top:8px;opacity:0;animation:fadeUp .8s ease .5s forwards}
+.splash-sig{font-size:12px;color:rgba(255,255,255,0.2);margin-top:48px;opacity:0;animation:fadeUp .8s ease .8s forwards}
+
+/* Import zone */
+.import-zone{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px dashed #222;border-radius:12px;margin:16px;transition:all .2s}
+.import-zone.dragover{border-color:var(--accent);background:rgba(224,148,58,0.05)}
+.import-icon{font-size:48px;color:#333;margin-bottom:16px}
+.import-title{font-size:18px;font-weight:600;color:rgba(255,255,255,0.6)}
+.import-sub{font-size:13px;color:var(--muted2);margin-top:8px}
+.import-btn{margin-top:24px;padding:10px 24px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer}
+.import-formats{font-size:11px;color:var(--muted2);margin-top:16px}
+
+/* Photo grid */
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;padding:16px}
+.photo-thumb{aspect-ratio:3/2;border-radius:4px;overflow:hidden;border:1px solid var(--border);cursor:pointer;position:relative;transition:transform .1s}
+.photo-thumb:hover{transform:scale(1.02)}
+.photo-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;color:rgba(255,255,255,0.1)}
+
+/* Edit panel */
+.edit-layout{display:flex;height:100%}
+.edit-canvas{flex:1;display:flex;align-items:center;justify-content:center;background:#080808}
+.edit-preview{width:70%;aspect-ratio:3/2;border-radius:4px;background:var(--surface);border:1px solid #222;display:flex;align-items:center;justify-content:center;font-size:12px;color:rgba(255,255,255,0.15)}
+.edit-panel{width:280px;border-left:1px solid var(--border);overflow-y:auto;padding:12px 0}
+.panel-section{border-bottom:1px solid #111}
+.panel-header{display:flex;align-items:center;justify-content:space-between;width:100%;padding:8px 16px;border:none;cursor:pointer;background:transparent;color:rgba(255,255,255,0.6);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.panel-engine{color:var(--accent);font-weight:400;font-size:9px;margin-left:6px}
+.panel-body{padding:0 16px 8px}
+.slider-row{margin-bottom:6px}
+.slider-label{display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px}
+.slider-name{color:var(--muted)}
+.slider-val{color:var(--muted2)}
+.slider-val.changed{color:var(--accent)}
+input[type=range]{width:100%;height:3px;-webkit-appearance:none;appearance:none;background:#222;border-radius:2px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--accent);cursor:pointer}
+
+/* Empty state */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--muted2);font-size:13px;padding:40px}
+.empty-icon{font-size:48px;margin-bottom:16px;color:#222}
+.empty-title{font-size:16px;font-weight:600;color:var(--muted);margin-bottom:8px}
+
+/* ShotTalk */
+.chat-layout{display:flex;height:100%}
+.chat-list{width:280px;border-right:1px solid var(--border);display:flex;flex-direction:column}
+.chat-list-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.chat-area{flex:1;display:flex;flex-direction:column}
+.chat-feature{display:flex;gap:10px;font-size:12px;padding:4px 0}
+.chat-check{color:var(--accent)}
+
+/* StyleForge */
+.sf-layout{display:flex;height:100%}
+.sf-picker{width:300px;border-right:1px solid var(--border);display:flex;flex-direction:column}
+.sf-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px;align-content:start;overflow:auto;flex:1}
+.sf-card{padding:12px 10px;border-radius:6px;border:none;background:var(--surface);cursor:pointer;text-align:left;border-left:2px solid transparent}
+.sf-card:hover,.sf-card.active{border-left-color:var(--accent);background:rgba(224,148,58,0.08)}
+.sf-card-icon{font-size:18px;margin-bottom:4px}
+.sf-card-name{font-size:12px;font-weight:600;color:rgba(255,255,255,0.6)}
+.sf-card-desc{font-size:10px;color:var(--muted2);margin-top:2px}
+
+/* Lang toggle */
+.lang-toggle{position:absolute;top:8px;right:60px;display:flex;gap:2px;z-index:50}
+.lang-btn{padding:2px 8px;border-radius:3px;border:1px solid #333;background:transparent;color:var(--muted2);font-size:10px;cursor:pointer}
+.lang-btn.active{background:rgba(224,148,58,0.15);color:var(--accent);border-color:var(--accent)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:768px){.sidebar{width:60px}.sb-item span:last-child,.sb-section,.sb-tagline,.sb-user-name,.sb-badge{display:none}.sb-logo-text{font-size:11px}}
+</style>
+</head>
+<body>
+
+<!-- Splash Screen -->
+<div class="splash" id="splash">
+  <div class="splash-logo">YmShotS</div>
+  <div class="splash-tag">your moments. your shots.</div>
+  <div class="splash-sig">Built by ta-tech</div>
+</div>
+
+<!-- App -->
+<div class="app" id="app" style="display:none">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sb-logo" onclick="setView('vault')">
+      <div class="sb-logo-text">YmShotS</div>
+      <div class="sb-tagline">your moments. your shots.</div>
+    </div>
+    <div class="sb-nav">
+      <div class="sb-section" id="sec-create">CREATE</div>
+      <button class="sb-item active" onclick="setView('vault')"><span class="sb-icon">&#9638;</span><span>Library</span></button>
+      <button class="sb-item" onclick="setView('edit')"><span class="sb-icon">&#9678;</span><span>Edit</span></button>
+      <button class="sb-item" onclick="setView('styleforge')"><span class="sb-icon">&#10024;</span><span>StyleForge</span></button>
+      <div class="sb-section" id="sec-business">BUSINESS</div>
+      <button class="sb-item" onclick="setView('gallery')"><span class="sb-icon">&#9633;</span><span>Galleries</span></button>
+      <button class="sb-item" onclick="setView('invoices')"><span class="sb-icon">&#8364;</span><span>Invoices</span></button>
+      <button class="sb-item" onclick="setView('shottalk')"><span class="sb-icon">&#9673;</span><span>ShotTalk</span></button>
+      <button class="sb-item" onclick="setView('analytics')"><span class="sb-icon">&#9650;</span><span>Analytics</span></button>
+      <div class="sb-section" id="sec-learn">LEARN</div>
+      <button class="sb-item" onclick="setView('academy')"><span class="sb-icon">&#9733;</span><span>Academy</span></button>
+      <div class="sb-section" id="sec-system">SYSTEM</div>
+      <button class="sb-item" onclick="setView('settings')"><span class="sb-icon">&#9881;</span><span>Settings</span></button>
+    </div>
+    <div class="sb-user">
+      <div class="sb-user-name" id="userName">Photographer</div>
+      <div class="sb-badge" style="background:rgba(124,77,255,0.15);color:#7C4DFF" id="userPlan">STUDIO</div>
+    </div>
+  </div>
+
+  <!-- Main area -->
+  <div class="main">
+    <!-- Topbar -->
+    <div class="topbar">
+      <span class="tb-view" id="viewLabel">Library</span>
+      <div class="lang-toggle">
+        <button class="lang-btn active" onclick="setAppLang('en')">EN</button>
+        <button class="lang-btn" onclick="setAppLang('fr')">FR</button>
+      </div>
+      <span class="tb-sig">Built by ta-tech</span>
+    </div>
+
+    <!-- Content views -->
+    <div class="content">
+
+      <!-- VAULT / LIBRARY -->
+      <div class="view active" id="view-vault">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 16px;border-bottom:1px solid var(--border)">
+          <div style="display:flex;gap:8px">
+            <button class="tb-btn" style="background:var(--accent);color:#fff;border:none" id="importBtn">+ Import</button>
+            <button class="tb-btn">Grid</button>
+            <button class="tb-btn">Loupe</button>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="tb-btn">Flag (P)</button>
+            <button class="tb-btn">Reject (X)</button>
+            <button class="tb-btn">SharpEye AI</button>
+          </div>
+        </div>
+        <div id="vaultContent" style="flex:1;overflow:auto">
+          <div class="import-zone" id="importZone">
+            <div class="import-icon">&#9638;</div>
+            <div class="import-title" id="importTitle">Import your first shoot</div>
+            <div class="import-sub" id="importSub">Drag a folder here, or click to browse</div>
+            <button class="import-btn" id="importAction">Browse files</button>
+            <div class="import-formats">RAW, JPEG, HEIF, PNG, TIFF</div>
+          </div>
+        </div>
+        <div style="padding:6px 16px;border-top:1px solid var(--border);font-size:10px;color:var(--muted2);display:flex;gap:16px">
+          <span>P Flag</span><span>X Reject</span><span>1-5 Rate</span><span>E Edit</span><span>Space Before/After</span>
+        </div>
+      </div>
+
+      <!-- EDIT -->
+      <div class="view" id="view-edit">
+        <div class="edit-layout">
+          <div class="edit-canvas">
+            <div class="edit-preview" id="editPreview">Preview (RawPulse pipeline)</div>
+          </div>
+          <div class="edit-panel">
+            <div class="panel-section">
+              <button class="panel-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+                Tone <span class="panel-engine">RawPulse</span>
+              </button>
+              <div class="panel-body">
+                <div class="slider-row"><div class="slider-label"><span class="slider-name">Exposure</span><span class="slider-val" id="val-exposure">0</span></div><input type="range" min="-50" max="50" value="0" oninput="updateSlider('exposure',this.value/10)"></div>
+                <div class="slider-row"><div class="slider-label"><span class="slider-name">Highlights</span><span class="slider-val">0</span></div><input type="range" min="-100" max="100" value="0"></div>
+                <div class="slider-row"><div class="slider-label"><span class="slider-name">Shadows</span><span class="slider-val">0</span></div><input type="range" min="-100" max="100" value="0"></div>
+                <div class="slider-row"><div class="slider-label"><span class="slider-name">Whites</span><span class="slider-val">0</span></div><input type="range" min="-100" max="100" value="0"></div>
+                <div class="slider-row"><div class="slider-label"><span class="slider-name">Blacks</span><span class="slider-val">0</span></div><input type="range" min="-100" max="100" value="0"></div>
+                <div class="slider-row"><div class="slider-label"><span class="slider-name">Contrast</span><span class="slider-val">0</span></div><input type="range" min="-100" max="100" value="0"></div>
+                <div class="slider-row"><div class="slider-label"><span class="slider-name">Clarity</span><span class="slider-val">0</span></div><input type="range" min="-100" max="100" value="0"></div>
+                <div class="slider-row"><div class="slider-label"><span class="slider-name">Vibrance</span><span class="slider-val">0</span></div><input type="range" min="-100" max="100" value="0"></div>
+                <div class="slider-row"><div class="slider-label"><span class="slider-name">Saturation</span><span class="slider-val">0</span></div><input type="range" min="-100" max="100" value="0"></div>
+              </div>
+            </div>
+            <div class="panel-section">
+              <button class="panel-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+                Color <span class="panel-engine">ChromaDesk</span>
+              </button>
+              <div class="panel-body">
+                <div class="slider-row"><div class="slider-label"><span class="slider-name">Temperature</span><span class="slider-val">5500K</span></div><input type="range" min="2000" max="16000" value="5500" step="100"></div>
+                <div class="slider-row"><div class="slider-label"><span class="slider-name">Tint</span><span class="slider-val">0</span></div><input type="range" min="-150" max="150" value="0"></div>
+              </div>
+            </div>
+            <div class="panel-section">
+              <button class="panel-header">Detail</button>
+              <div class="panel-body">
+                <div class="slider-row"><div class="slider-label"><span class="slider-name">Sharpening</span><span class="slider-val">0</span></div><input type="range" min="0" max="150" value="0"></div>
+                <div class="slider-row"><div class="slider-label"><span class="slider-name">Noise Reduction</span><span class="slider-val">0</span></div><input type="range" min="0" max="100" value="0"></div>
+              </div>
+            </div>
+            <div class="panel-section">
+              <button class="panel-header">Film Grain <span class="panel-engine">GrainLab</span></button>
+              <div class="panel-body">
+                <div class="slider-row"><div class="slider-label"><span class="slider-name">Amount</span><span class="slider-val">0</span></div><input type="range" min="0" max="100" value="0"></div>
+                <div class="slider-row"><div class="slider-label"><span class="slider-name">Size</span><span class="slider-val">0</span></div><input type="range" min="0" max="100" value="0"></div>
+                <div class="slider-row"><div class="slider-label"><span class="slider-name">Roughness</span><span class="slider-val">0</span></div><input type="range" min="0" max="100" value="0"></div>
+              </div>
+            </div>
+            <div style="padding:12px 16px">
+              <button style="width:100%;padding:8px;border-radius:5px;border:1px solid #333;background:transparent;color:var(--muted);font-size:11px;cursor:pointer">Reset all to default</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STYLEFORGE -->
+      <div class="view" id="view-styleforge">
+        <div class="sf-layout">
+          <div class="sf-picker">
+            <div style="padding:12px 16px;border-bottom:1px solid var(--border)">
+              <div style="font-size:14px;font-weight:600">StyleForge</div>
+              <div style="font-size:11px;color:var(--muted2);margin-top:4px">AI creative effects. All on-device.</div>
+            </div>
+            <div class="sf-grid">
+              <button class="sf-card" onclick="selectEffect(this,'Cartoon')"><div class="sf-card-icon">&#127912;</div><div class="sf-card-name">Cartoon</div><div class="sf-card-desc">Bold outlines, flat colors</div></button>
+              <button class="sf-card" onclick="selectEffect(this,'Comic')"><div class="sf-card-icon">&#128165;</div><div class="sf-card-name">Comic Book</div><div class="sf-card-desc">Halftone dots, bold shadows</div></button>
+              <button class="sf-card" onclick="selectEffect(this,'Watercolor')"><div class="sf-card-icon">&#127752;</div><div class="sf-card-name">Watercolor</div><div class="sf-card-desc">Soft washes, paper texture</div></button>
+              <button class="sf-card" onclick="selectEffect(this,'Oil Painting')"><div class="sf-card-icon">&#128444;</div><div class="sf-card-name">Oil Painting</div><div class="sf-card-desc">Rich brushstrokes, deep color</div></button>
+              <button class="sf-card" onclick="selectEffect(this,'Pencil Sketch')"><div class="sf-card-icon">&#9999;</div><div class="sf-card-name">Pencil Sketch</div><div class="sf-card-desc">Graphite lines, subtle shading</div></button>
+              <button class="sf-card" onclick="selectEffect(this,'Charcoal')"><div class="sf-card-icon">&#127761;</div><div class="sf-card-name">Charcoal</div><div class="sf-card-desc">Deep blacks, textured strokes</div></button>
+              <button class="sf-card" onclick="selectEffect(this,'Pop Art')"><div class="sf-card-icon">&#127752;</div><div class="sf-card-name">Pop Art</div><div class="sf-card-desc">Warhol-inspired color blocks</div></button>
+              <button class="sf-card" onclick="selectEffect(this,'3D Character')"><div class="sf-card-icon">&#129482;</div><div class="sf-card-name">3D Character</div><div class="sf-card-desc">Pixar-style 3D rendering</div></button>
+              <button class="sf-card" onclick="selectEffect(this,'Anime')"><div class="sf-card-icon">&#11088;</div><div class="sf-card-name">Anime</div><div class="sf-card-desc">Japanese animation style</div></button>
+              <button class="sf-card" onclick="selectEffect(this,'Caricature')"><div class="sf-card-icon">&#128526;</div><div class="sf-card-name">Caricature</div><div class="sf-card-desc">Exaggerated features, playful</div></button>
+              <button class="sf-card" onclick="selectEffect(this,'Mosaic')"><div class="sf-card-icon">&#128160;</div><div class="sf-card-name">Mosaic</div><div class="sf-card-desc">Tile pattern reconstruction</div></button>
+              <button class="sf-card" onclick="selectEffect(this,'Neon Glow')"><div class="sf-card-icon">&#128161;</div><div class="sf-card-name">Neon Glow</div><div class="sf-card-desc">Glowing edges on dark</div></button>
+            </div>
+          </div>
+          <div style="flex:1;display:flex;align-items:center;justify-content:center">
+            <div style="text-align:center;color:var(--muted2)">
+              <div style="font-size:14px;margin-bottom:8px">Select a photo first, then choose an effect</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GALLERY -->
+      <div class="view" id="view-gallery">
+        <div class="empty"><div class="empty-icon">&#9633;</div><div class="empty-title">Galleries</div><p>Create and manage client delivery galleries. Dark. Elegant. Your brand everywhere.</p><button class="import-btn" style="margin-top:16px">+ New Gallery</button></div>
+      </div>
+
+      <!-- INVOICES -->
+      <div class="view" id="view-invoices">
+        <div class="empty"><div class="empty-icon">&#8364;</div><div class="empty-title">Invoices</div><p>Send beautiful invoices. Get paid via MoMo, Orange Money, card, or cash.</p><button class="import-btn" style="margin-top:16px">+ New Invoice</button></div>
+      </div>
+
+      <!-- SHOTTALK -->
+      <div class="view" id="view-shottalk">
+        <div class="chat-layout">
+          <div class="chat-list">
+            <div class="chat-list-header"><span style="font-size:14px;font-weight:600">ShotTalk</span><button class="tb-btn" style="background:var(--accent);color:#fff;border:none">+ New</button></div>
+            <div class="empty" style="font-size:12px"><p>No conversations yet.</p><p style="margin-top:4px;font-size:11px">Create a thread to chat with clients.</p></div>
+          </div>
+          <div class="chat-area">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted2);padding:40px">
+              <div style="font-size:16px;font-weight:600;color:var(--muted);margin-bottom:8px">Communication, simplified.</div>
+              <div style="font-size:12px;max-width:320px;text-align:center;line-height:1.7;margin-bottom:24px">Every conversation is tied to a shoot. Tap photos to leave pinned feedback. Clients see messages in their gallery.</div>
+              <div class="chat-feature"><span class="chat-check">&#10003;</span><span><strong style="color:var(--muted)">Shoot threads</strong> <span style="color:var(--muted2)">One conversation per project</span></span></div>
+              <div class="chat-feature"><span class="chat-check">&#10003;</span><span><strong style="color:var(--muted)">Photo annotations</strong> <span style="color:var(--muted2)">Pin feedback on exact spots</span></span></div>
+              <div class="chat-feature"><span class="chat-check">&#10003;</span><span><strong style="color:var(--muted)">Auto-notifications</strong> <span style="color:var(--muted2)">Gallery ready, selections received</span></span></div>
+              <div class="chat-feature"><span class="chat-check">&#10003;</span><span><strong style="color:var(--muted)">Email bridge</strong> <span style="color:var(--muted2)">Clients reply by email</span></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ANALYTICS -->
+      <div class="view" id="view-analytics">
+        <div class="empty"><div class="empty-icon">&#9650;</div><div class="empty-title">LensBiz Analytics</div><p>Revenue, time tracking, and business insights. All in one place.</p></div>
+      </div>
+
+      <!-- ACADEMY -->
+      <div class="view" id="view-academy">
+        <div style="padding:24px">
+          <div style="font-size:20px;font-weight:700;margin-bottom:4px">AcademyMode</div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:24px">30 lessons. 4 tracks. Learn photography editing at the exact moment you need it.</div>
+          <div style="display:flex;gap:16px;margin-bottom:24px">
+            <div style="padding:8px 14px;border-radius:6px;background:var(--surface);border:1px solid var(--border)"><div style="font-size:9px;color:var(--muted2);text-transform:uppercase">XP</div><div style="font-size:16px;font-weight:700">0</div></div>
+            <div style="padding:8px 14px;border-radius:6px;background:var(--surface);border:1px solid var(--border)"><div style="font-size:9px;color:var(--muted2);text-transform:uppercase">Streak</div><div style="font-size:16px;font-weight:700">0 days</div></div>
+            <div style="padding:8px 14px;border-radius:6px;background:var(--surface);border:1px solid var(--border)"><div style="font-size:9px;color:var(--muted2);text-transform:uppercase">Completed</div><div style="font-size:16px;font-weight:700">0 / 30</div></div>
+            <div style="padding:8px 14px;border-radius:6px;background:var(--surface);border:1px solid var(--border)"><div style="font-size:9px;color:var(--muted2);text-transform:uppercase">Level</div><div style="font-size:16px;font-weight:700;color:#4CAF50">Beginner</div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="padding:16px;border-radius:8px;background:var(--surface);border:1px solid var(--border)"><span style="font-size:14px;font-weight:600;color:#4CAF50">Beginner</span><span style="font-size:11px;color:var(--muted2);margin-left:8px">6 lessons</span><div style="margin-top:8px;height:3px;border-radius:2px;background:#222"><div style="width:0%;height:100%;border-radius:2px;background:#4CAF50"></div></div></div>
+            <div style="padding:16px;border-radius:8px;background:var(--surface);border:1px solid var(--border);opacity:0.5"><span style="font-size:14px;font-weight:600;color:#FF9800">Intermediate</span><span style="font-size:11px;color:var(--muted2);margin-left:8px">9 lessons</span><span style="float:right;font-size:10px;color:#444;border:1px solid #333;padding:2px 8px;border-radius:3px">Locked</span></div>
+            <div style="padding:16px;border-radius:8px;background:var(--surface);border:1px solid var(--border);opacity:0.5"><span style="font-size:14px;font-weight:600;color:#E0943A">Advanced</span><span style="font-size:11px;color:var(--muted2);margin-left:8px">9 lessons</span><span style="float:right;font-size:10px;color:#444;border:1px solid #333;padding:2px 8px;border-radius:3px">Locked</span></div>
+            <div style="padding:16px;border-radius:8px;background:var(--surface);border:1px solid var(--border);opacity:0.5"><span style="font-size:14px;font-weight:600;color:#7C4DFF">Master</span><span style="font-size:11px;color:var(--muted2);margin-left:8px">6 lessons</span><span style="float:right;font-size:10px;color:#444;border:1px solid #333;padding:2px 8px;border-radius:3px">Locked</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="view" id="view-settings">
+        <div style="max-width:600px;margin:0 auto;padding:24px">
+          <div style="font-size:20px;font-weight:700;margin-bottom:24px">Settings</div>
+          <div style="font-size:12px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border)">Language</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;font-size:13px;color:rgba(255,255,255,0.6)"><span>Language / Langue</span><div style="display:flex;border-radius:4px;overflow:hidden;border:1px solid #222"><button onclick="setAppLang('en')" style="padding:4px 12px;border:none;font-size:11px;cursor:pointer;background:rgba(224,148,58,0.2);color:#fff">EN</button><button onclick="setAppLang('fr')" style="padding:4px 12px;border:none;font-size:11px;cursor:pointer;background:transparent;color:var(--muted)">FR</button></div></div>
+          <div style="font-size:12px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.05em;margin:24px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--border)">About</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.7"><p><strong style="color:rgba(255,255,255,0.6)">YmShotS v1.0</strong> | your moments. your shots.</p><p style="margin-top:8px">Built by ta-tech. Because every creative deserves tools as exceptional as their vision.</p></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// Splash → App
+setTimeout(()=>{
+  document.getElementById('splash').classList.add('hidden');
+  document.getElementById('app').style.display='flex';
+},2500);
+
+// Navigation
+const viewLabels={vault:'Library',edit:'Edit',styleforge:'StyleForge',gallery:'Galleries',invoices:'Invoices',shottalk:'ShotTalk',analytics:'Analytics',academy:'Academy',settings:'Settings'};
+function setView(v){
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(b=>{if(b.textContent.trim()===viewLabels[v])b.classList.add('active')});
+  document.getElementById('viewLabel').textContent=viewLabels[v]||v;
+}
+
+// Import demo
+document.getElementById('importBtn').addEventListener('click',showDemoPhotos);
+document.getElementById('importAction').addEventListener('click',showDemoPhotos);
+function showDemoPhotos(){
+  const grid=document.createElement('div');
+  grid.className='photo-grid';
+  for(let i=0;i<24;i++){
+    const thumb=document.createElement('div');
+    thumb.className='photo-thumb';
+    thumb.style.background='hsl('+(i*37%360)+',15%,'+(12+i%5*2)+'%)';
+    thumb.innerHTML='<div class="photo-placeholder">DSC_'+String(i+1).padStart(4,'0')+'</div>';
+    thumb.ondblclick=()=>setView('edit');
+    grid.appendChild(thumb);
+  }
+  const vc=document.getElementById('vaultContent');
+  vc.innerHTML='';
+  vc.appendChild(grid);
+}
+
+// Sliders
+function updateSlider(name,val){
+  const el=document.getElementById('val-'+name);
+  if(el){el.textContent=val;el.className=val!=0?'slider-val changed':'slider-val'}
+}
+document.querySelectorAll('.edit-panel input[type=range]').forEach(s=>{
+  s.addEventListener('input',function(){
+    const valEl=this.parentElement.querySelector('.slider-val');
+    if(valEl){valEl.textContent=this.value;valEl.className=this.value!=0&&this.value!=5500?'slider-val changed':'slider-val'}
+  });
+});
+
+// StyleForge
+function selectEffect(el,name){
+  document.querySelectorAll('.sf-card').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// Language
+const TR={
+  en:{create:'CREATE',business:'BUSINESS',learn:'LEARN',system:'SYSTEM',library:'Library',edit:'Edit',galleries:'Galleries',invoices:'Invoices',analytics:'Analytics',academy:'Academy',settings:'Settings',importTitle:'Import your first shoot',importSub:'Drag a folder here, or click to browse',importBtn:'Browse files'},
+  fr:{create:'CRÉER',business:'BUSINESS',learn:'APPRENDRE',system:'SYSTÈME',library:'Bibliothèque',edit:'Édition',galleries:'Galeries',invoices:'Factures',analytics:'Statistiques',academy:'Académie',settings:'Paramètres',importTitle:'Importez votre premier shooting',importSub:'Glissez un dossier ici, ou cliquez pour parcourir',importBtn:'Parcourir les fichiers'}
+};
+function setAppLang(lang){
+  const t=TR[lang];
+  document.getElementById('sec-create').textContent=t.create;
+  document.getElementById('sec-business').textContent=t.business;
+  document.getElementById('sec-learn').textContent=t.learn;
+  document.getElementById('sec-system').textContent=t.system;
+  document.getElementById('importTitle').textContent=t.importTitle;
+  document.getElementById('importSub').textContent=t.importSub;
+  document.getElementById('importAction').textContent=t.importBtn;
+  document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+  viewLabels.vault=t.library;viewLabels.edit=t.edit;viewLabels.gallery=t.galleries;
+  viewLabels.invoices=t.invoices;viewLabels.analytics=t.analytics;
+  viewLabels.academy=t.academy;viewLabels.settings=t.settings;
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape')setView('vault');
+  if(e.key==='e'||e.key==='E')setView('edit');
+});
+
+// Drag and drop
+const iz=document.getElementById('importZone');
+if(iz){
+  iz.addEventListener('dragover',e=>{e.preventDefault();iz.classList.add('dragover')});
+  iz.addEventListener('dragleave',()=>iz.classList.remove('dragover'));
+  iz.addEventListener('drop',e=>{e.preventDefault();iz.classList.remove('dragover');showDemoPhotos()});
+}
+</script>
+</body>
+</html>
