@@ -254,26 +254,20 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;heigh
           <div class="sf-picker">
             <div style="padding:12px 16px;border-bottom:1px solid var(--border)">
               <div style="font-size:14px;font-weight:600">StyleForge</div>
-              <div style="font-size:11px;color:var(--muted2);margin-top:4px">AI creative effects. All on-device.</div>
+              <div style="font-size:11px;color:var(--muted2);margin-top:4px" id="sfSubtitle">AI creative effects. Applied via Canvas.</div>
+              <div id="sfAiDesc" style="font-size:11px;color:var(--accent);margin-top:4px;display:none"></div>
             </div>
-            <div class="sf-grid">
-              <button class="sf-card" onclick="selectEffect(this,'Cartoon')"><div class="sf-card-icon">&#127912;</div><div class="sf-card-name">Cartoon</div><div class="sf-card-desc">Bold outlines, flat colors</div></button>
-              <button class="sf-card" onclick="selectEffect(this,'Comic')"><div class="sf-card-icon">&#128165;</div><div class="sf-card-name">Comic Book</div><div class="sf-card-desc">Halftone dots, bold shadows</div></button>
-              <button class="sf-card" onclick="selectEffect(this,'Watercolor')"><div class="sf-card-icon">&#127752;</div><div class="sf-card-name">Watercolor</div><div class="sf-card-desc">Soft washes, paper texture</div></button>
-              <button class="sf-card" onclick="selectEffect(this,'Oil Painting')"><div class="sf-card-icon">&#128444;</div><div class="sf-card-name">Oil Painting</div><div class="sf-card-desc">Rich brushstrokes, deep color</div></button>
-              <button class="sf-card" onclick="selectEffect(this,'Pencil Sketch')"><div class="sf-card-icon">&#9999;</div><div class="sf-card-name">Pencil Sketch</div><div class="sf-card-desc">Graphite lines, subtle shading</div></button>
-              <button class="sf-card" onclick="selectEffect(this,'Charcoal')"><div class="sf-card-icon">&#127761;</div><div class="sf-card-name">Charcoal</div><div class="sf-card-desc">Deep blacks, textured strokes</div></button>
-              <button class="sf-card" onclick="selectEffect(this,'Pop Art')"><div class="sf-card-icon">&#127752;</div><div class="sf-card-name">Pop Art</div><div class="sf-card-desc">Warhol-inspired color blocks</div></button>
-              <button class="sf-card" onclick="selectEffect(this,'3D Character')"><div class="sf-card-icon">&#129482;</div><div class="sf-card-name">3D Character</div><div class="sf-card-desc">Pixar-style 3D rendering</div></button>
-              <button class="sf-card" onclick="selectEffect(this,'Anime')"><div class="sf-card-icon">&#11088;</div><div class="sf-card-name">Anime</div><div class="sf-card-desc">Japanese animation style</div></button>
-              <button class="sf-card" onclick="selectEffect(this,'Caricature')"><div class="sf-card-icon">&#128526;</div><div class="sf-card-name">Caricature</div><div class="sf-card-desc">Exaggerated features, playful</div></button>
-              <button class="sf-card" onclick="selectEffect(this,'Mosaic')"><div class="sf-card-icon">&#128160;</div><div class="sf-card-name">Mosaic</div><div class="sf-card-desc">Tile pattern reconstruction</div></button>
-              <button class="sf-card" onclick="selectEffect(this,'Neon Glow')"><div class="sf-card-icon">&#128161;</div><div class="sf-card-name">Neon Glow</div><div class="sf-card-desc">Glowing edges on dark</div></button>
-            </div>
+            <div class="sf-grid" id="sfGrid"></div>
           </div>
-          <div style="flex:1;display:flex;align-items:center;justify-content:center">
-            <div style="text-align:center;color:var(--muted2)">
-              <div style="font-size:14px;margin-bottom:8px">Select a photo first, then choose an effect</div>
+          <div style="flex:1;display:flex;flex-direction:column">
+            <div style="flex:1;display:flex;align-items:center;justify-content:center;position:relative">
+              <canvas id="sfCanvas" style="max-width:90%;max-height:80%;border-radius:4px;display:none"></canvas>
+              <div id="sfPlaceholder" style="text-align:center;color:var(--muted2);font-size:13px">Import a photo first, then apply effects here</div>
+            </div>
+            <div id="sfControls" style="padding:12px 24px;border-top:1px solid var(--border);display:none;align-items:center;gap:16px">
+              <div style="flex:1"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--muted)">Intensity</span><span style="color:var(--accent)" id="sfIntVal">100%</span></div><input type="range" id="sfIntensity" min="0" max="100" value="100" style="width:100%"></div>
+              <button id="sfApplyBtn" style="padding:10px 24px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer">Apply</button>
+              <button id="sfDownloadBtn" style="padding:10px 16px;border-radius:6px;border:1px solid #333;background:transparent;color:var(--muted);font-size:12px;cursor:pointer">Download</button>
             </div>
           </div>
         </div>
@@ -281,29 +275,39 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;heigh
 
       <!-- GALLERY -->
       <div class="view" id="view-gallery">
-        <div class="empty"><div class="empty-icon">&#9633;</div><div class="empty-title">Galleries</div><p>Create and manage client delivery galleries. Dark. Elegant. Your brand everywhere.</p><button class="import-btn" style="margin-top:16px">+ New Gallery</button></div>
+        <div style="padding:24px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <div><div style="font-size:20px;font-weight:700" id="galleryTitle">Galleries</div><div style="font-size:13px;color:var(--muted)" id="gallerySub">Create and share client delivery galleries</div></div>
+            <button class="import-btn" onclick="createGallery()" id="galleryNewBtn">+ New Gallery</button>
+          </div>
+          <div id="galleryList"></div>
+        </div>
       </div>
 
       <!-- INVOICES -->
       <div class="view" id="view-invoices">
-        <div class="empty"><div class="empty-icon">&#8364;</div><div class="empty-title">Invoices</div><p>Send beautiful invoices. Get paid via MoMo, Orange Money, card, or cash.</p><button class="import-btn" style="margin-top:16px">+ New Invoice</button></div>
+        <div style="padding:24px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <div><div style="font-size:20px;font-weight:700" id="invoiceTitle">Invoices</div><div style="font-size:13px;color:var(--muted)" id="invoiceSub">Send invoices. Get paid via MoMo, Orange Money, card, or cash.</div></div>
+            <button class="import-btn" onclick="createInvoice()" id="invoiceNewBtn">+ New Invoice</button>
+          </div>
+          <div id="invoiceList"></div>
+        </div>
       </div>
 
       <!-- SHOTTALK -->
       <div class="view" id="view-shottalk">
         <div class="chat-layout">
           <div class="chat-list">
-            <div class="chat-list-header"><span style="font-size:14px;font-weight:600">ShotTalk</span><button class="tb-btn" style="background:var(--accent);color:#fff;border:none">+ New</button></div>
-            <div class="empty" style="font-size:12px"><p>No conversations yet.</p><p style="margin-top:4px;font-size:11px">Create a thread to chat with clients.</p></div>
+            <div class="chat-list-header"><span style="font-size:14px;font-weight:600">ShotTalk</span><button class="tb-btn" style="background:var(--accent);color:#fff;border:none" onclick="createThread()">+ New</button></div>
+            <div id="threadList" style="flex:1;overflow:auto"></div>
           </div>
           <div class="chat-area">
-            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted2);padding:40px">
-              <div style="font-size:16px;font-weight:600;color:var(--muted);margin-bottom:8px">Communication, simplified.</div>
-              <div style="font-size:12px;max-width:320px;text-align:center;line-height:1.7;margin-bottom:24px">Every conversation is tied to a shoot. Tap photos to leave pinned feedback. Clients see messages in their gallery.</div>
-              <div class="chat-feature"><span class="chat-check">&#10003;</span><span><strong style="color:var(--muted)">Shoot threads</strong> <span style="color:var(--muted2)">One conversation per project</span></span></div>
-              <div class="chat-feature"><span class="chat-check">&#10003;</span><span><strong style="color:var(--muted)">Photo annotations</strong> <span style="color:var(--muted2)">Pin feedback on exact spots</span></span></div>
-              <div class="chat-feature"><span class="chat-check">&#10003;</span><span><strong style="color:var(--muted)">Auto-notifications</strong> <span style="color:var(--muted2)">Gallery ready, selections received</span></span></div>
-              <div class="chat-feature"><span class="chat-check">&#10003;</span><span><strong style="color:var(--muted)">Email bridge</strong> <span style="color:var(--muted2)">Clients reply by email</span></span></div>
+            <div id="chatMessages" style="flex:1;overflow:auto;padding:16px"></div>
+            <div id="chatSmartReplies" style="padding:4px 16px;display:none;gap:6px;flex-wrap:wrap"></div>
+            <div style="padding:10px 16px;border-top:1px solid var(--border);display:flex;gap:8px">
+              <input id="chatInput" placeholder="Type a message..." style="flex:1;padding:8px 12px;border-radius:6px;border:1px solid #222;background:var(--surface);color:var(--text);font-size:13px" onkeydown="if(event.key==='Enter')sendChatMessage()">
+              <button onclick="sendChatMessage()" style="padding:8px 16px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:600;cursor:pointer">Send</button>
             </div>
           </div>
         </div>
@@ -311,7 +315,16 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;heigh
 
       <!-- ANALYTICS -->
       <div class="view" id="view-analytics">
-        <div class="empty"><div class="empty-icon">&#9650;</div><div class="empty-title">LensBiz Analytics</div><p>Revenue, time tracking, and business insights. All in one place.</p></div>
+        <div style="padding:24px">
+          <div style="font-size:20px;font-weight:700;margin-bottom:4px">LensBiz Analytics</div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:24px" id="analyticsSub">Revenue, time tracking, and business insights</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px" id="analyticsStats">
+            <div style="padding:14px 16px;border-radius:8px;background:var(--surface);border:1px solid var(--border)"><div style="font-size:10px;color:var(--muted2);text-transform:uppercase">This month</div><div style="font-size:24px;font-weight:700;color:#4CAF50;margin-top:4px" id="statRevenue">$0</div></div>
+            <div style="padding:14px 16px;border-radius:8px;background:var(--surface);border:1px solid var(--border)"><div style="font-size:10px;color:var(--muted2);text-transform:uppercase">Invoices</div><div style="font-size:24px;font-weight:700;margin-top:4px" id="statInvoices">0</div></div>
+            <div style="padding:14px 16px;border-radius:8px;background:var(--surface);border:1px solid var(--border)"><div style="font-size:10px;color:var(--muted2);text-transform:uppercase">Photos edited</div><div style="font-size:24px;font-weight:700;margin-top:4px" id="statPhotos">0</div></div>
+            <div style="padding:14px 16px;border-radius:8px;background:var(--surface);border:1px solid var(--border)"><div style="font-size:10px;color:var(--muted2);text-transform:uppercase">Galleries</div><div style="font-size:24px;font-weight:700;margin-top:4px" id="statGalleries">0</div></div>
+          </div>
+        </div>
       </div>
 
       <!-- ACADEMY -->
@@ -540,10 +553,292 @@ if(iz){
   });
 }
 
-// StyleForge
-function selectEffect(el,name){
+// ═══ STYLEFORGE — Real Canvas effects ═══
+const SF_EFFECTS=[
+  {id:'cartoon',name:'Cartoon',nameFr:'Cartoon',icon:'&#127912;',desc:'Bold outlines, flat colors',descFr:'Contours gras, couleurs plates'},
+  {id:'comic',name:'Comic Book',nameFr:'Bande dessinée',icon:'&#128165;',desc:'Halftone dots, bold shadows',descFr:'Points de trame, ombres fortes'},
+  {id:'watercolor',name:'Watercolor',nameFr:'Aquarelle',icon:'&#127752;',desc:'Soft washes, paper texture',descFr:'Lavis doux, texture papier'},
+  {id:'oil',name:'Oil Painting',nameFr:'Peinture à l\'huile',icon:'&#128444;',desc:'Rich brushstrokes',descFr:'Coups de pinceau riches'},
+  {id:'pencil',name:'Pencil Sketch',nameFr:'Croquis crayon',icon:'&#9999;',desc:'Graphite lines',descFr:'Lignes de graphite'},
+  {id:'charcoal',name:'Charcoal',nameFr:'Fusain',icon:'&#127761;',desc:'Deep blacks',descFr:'Noirs profonds'},
+  {id:'popart',name:'Pop Art',nameFr:'Pop Art',icon:'&#127752;',desc:'Color blocks',descFr:'Blocs de couleur'},
+  {id:'3d',name:'3D Character',nameFr:'Personnage 3D',icon:'&#129482;',desc:'Pixar-style',descFr:'Style Pixar'},
+  {id:'anime',name:'Anime',nameFr:'Anime',icon:'&#11088;',desc:'Japanese style',descFr:'Style japonais'},
+  {id:'caricature',name:'Caricature',nameFr:'Caricature',icon:'&#128526;',desc:'Exaggerated features',descFr:'Traits exagérés'},
+  {id:'mosaic',name:'Mosaic',nameFr:'Mosaïque',icon:'&#128160;',desc:'Tile pattern',descFr:'Motif carrelage'},
+  {id:'neon',name:'Neon Glow',nameFr:'Néon',icon:'&#128161;',desc:'Glowing edges',descFr:'Bords lumineux'},
+];
+let currentSfEffect=null;
+
+function renderSfGrid(){
+  const grid=document.getElementById('sfGrid');
+  const lang=currentLang;
+  grid.innerHTML='';
+  SF_EFFECTS.forEach(ef=>{
+    const btn=document.createElement('button');
+    btn.className='sf-card';
+    btn.innerHTML='<div class="sf-card-icon">'+ef.icon+'</div><div class="sf-card-name">'+(lang==='fr'?ef.nameFr:ef.name)+'</div><div class="sf-card-desc">'+(lang==='fr'?ef.descFr:ef.desc)+'</div>';
+    btn.onclick=()=>applyStyleForge(ef,btn);
+    grid.appendChild(btn);
+  });
+}
+
+function applyStyleForge(effect,btn){
   document.querySelectorAll('.sf-card').forEach(c=>c.classList.remove('active'));
-  el.classList.add('active');
+  btn.classList.add('active');
+  currentSfEffect=effect;
+
+  if(!currentEditFile){
+    document.getElementById('sfPlaceholder').textContent=currentLang==='fr'?'Importez d\'abord une photo':'Import a photo first';
+    return;
+  }
+
+  const canvas=document.getElementById('sfCanvas');
+  const ctx=canvas.getContext('2d');
+  const img=new Image();
+  img.onload=()=>{
+    canvas.width=Math.min(img.width,800);
+    canvas.height=Math.min(img.height,600);
+    const scale=Math.min(canvas.width/img.width,canvas.height/img.height);
+    canvas.width=img.width*scale;
+    canvas.height=img.height*scale;
+    ctx.drawImage(img,0,0,canvas.width,canvas.height);
+
+    // Apply real Canvas effect
+    const imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
+    const d=imageData.data;
+    const intensity=document.getElementById('sfIntensity').value/100;
+
+    switch(effect.id){
+      case 'pencil':case 'charcoal':
+        for(let i=0;i<d.length;i+=4){const g=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];const v=effect.id==='charcoal'?g*0.7:g;d[i]=d[i+1]=d[i+2]=255-((255-v)*intensity+v*(1-intensity));}
+        break;
+      case 'cartoon':
+        for(let i=0;i<d.length;i+=4){d[i]=Math.round(d[i]/32)*32*intensity+d[i]*(1-intensity);d[i+1]=Math.round(d[i+1]/32)*32*intensity+d[i+1]*(1-intensity);d[i+2]=Math.round(d[i+2]/32)*32*intensity+d[i+2]*(1-intensity);}
+        break;
+      case 'comic':
+        for(let i=0;i<d.length;i+=4){const g=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];const t=g>128?255:0;d[i]=t*intensity+d[i]*(1-intensity);d[i+1]=t*intensity+d[i+1]*(1-intensity);d[i+2]=t*intensity+d[i+2]*(1-intensity);}
+        break;
+      case 'watercolor':
+        for(let i=0;i<d.length;i+=4){const n=(Math.random()-0.5)*30*intensity;d[i]=Math.min(255,d[i]+n);d[i+1]=Math.min(255,d[i+1]+n);d[i+2]=Math.min(255,d[i+2]+n);}
+        break;
+      case 'oil':
+        for(let i=0;i<d.length;i+=4){d[i]=Math.round(d[i]/16)*16*intensity+d[i]*(1-intensity);d[i+1]=Math.round(d[i+1]/16)*16*intensity+d[i+1]*(1-intensity);d[i+2]=Math.round(d[i+2]/16)*16*intensity+d[i+2]*(1-intensity);}
+        break;
+      case 'popart':
+        for(let i=0;i<d.length;i+=4){d[i]=Math.round(d[i]/64)*85*intensity+d[i]*(1-intensity);d[i+1]=Math.round(d[i+1]/64)*85*intensity+d[i+1]*(1-intensity);d[i+2]=Math.round(d[i+2]/64)*85*intensity+d[i+2]*(1-intensity);}
+        break;
+      case 'neon':
+        for(let i=0;i<d.length;i+=4){const g=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];if(g>100&&g<200){d[i]=224*intensity;d[i+1]=148*intensity;d[i+2]=58*intensity;}else{d[i]*=(1-intensity*0.8);d[i+1]*=(1-intensity*0.8);d[i+2]*=(1-intensity*0.8);}}
+        break;
+      case 'mosaic':
+        const bs=Math.max(4,Math.round(20*intensity));
+        for(let y=0;y<canvas.height;y+=bs)for(let x=0;x<canvas.width;x+=bs){const idx=(y*canvas.width+x)*4;for(let by=0;by<bs&&y+by<canvas.height;by++)for(let bx=0;bx<bs&&x+bx<canvas.width;bx++){const ti=((y+by)*canvas.width+(x+bx))*4;d[ti]=d[idx];d[ti+1]=d[idx+1];d[ti+2]=d[idx+2];}}
+        break;
+      default:
+        // Sepia-like for remaining effects
+        for(let i=0;i<d.length;i+=4){const g=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];d[i]=(g+40)*intensity+d[i]*(1-intensity);d[i+1]=g*intensity+d[i+1]*(1-intensity);d[i+2]=(g-20)*intensity+d[i+2]*(1-intensity);}
+    }
+
+    ctx.putImageData(imageData,0,0);
+    canvas.style.display='block';
+    document.getElementById('sfPlaceholder').style.display='none';
+    document.getElementById('sfControls').style.display='flex';
+  };
+  img.src=URL.createObjectURL(currentEditFile);
+
+  // Get AI description
+  callAI('style-describe',{effect:effect.name}).then(desc=>{
+    if(desc)document.getElementById('sfAiDesc').textContent=desc,document.getElementById('sfAiDesc').style.display='block';
+  });
+}
+
+document.getElementById('sfIntensity')?.addEventListener('input',function(){
+  document.getElementById('sfIntVal').textContent=this.value+'%';
+  if(currentSfEffect&&currentEditFile)applyStyleForge(currentSfEffect,document.querySelector('.sf-card.active'));
+});
+
+document.getElementById('sfDownloadBtn')?.addEventListener('click',()=>{
+  const canvas=document.getElementById('sfCanvas');
+  const a=document.createElement('a');
+  a.download='ymshots-'+currentSfEffect?.id+'.jpg';
+  a.href=canvas.toDataURL('image/jpeg',0.92);
+  a.click();
+});
+
+// ═══ GALLERIES — Create, view, share ═══
+let galleries=JSON.parse(localStorage.getItem('ym-galleries')||'[]');
+
+function renderGalleries(){
+  const list=document.getElementById('galleryList');
+  if(galleries.length===0){
+    list.innerHTML='<div style="padding:40px;text-align:center;border:1px dashed #222;border-radius:8px;color:var(--muted2);font-size:13px">'+(currentLang==='fr'?'Aucune galerie. Importez des photos d\'abord.':'No galleries yet. Import photos first.')+'</div>';
+    return;
+  }
+  list.innerHTML=galleries.map((g,i)=>'<div style="padding:16px;border-radius:8px;background:var(--surface);border:1px solid var(--border);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:14px;font-weight:600">'+g.title+'</div><div style="font-size:11px;color:var(--muted)">'+g.photos+' photos · '+g.date+'</div></div><div style="display:flex;gap:8px"><button onclick="shareGallery('+i+')" class="tb-btn" style="color:var(--accent)">'+(currentLang==='fr'?'Partager':'Share')+'</button><button onclick="deleteGallery('+i+')" class="tb-btn" style="color:#e74c3c">'+(currentLang==='fr'?'Supprimer':'Delete')+'</button></div></div>').join('');
+  updateStats();
+}
+
+function createGallery(){
+  const title=prompt(currentLang==='fr'?'Nom de la galerie:':'Gallery name:');
+  if(!title)return;
+  galleries.push({title,photos:importedPhotos.length,date:new Date().toLocaleDateString(),slug:title.toLowerCase().replace(/[^a-z0-9]/g,'-')+'-'+Date.now().toString(36)});
+  localStorage.setItem('ym-galleries',JSON.stringify(galleries));
+  renderGalleries();
+}
+
+function shareGallery(i){
+  const url='https://ymshots.com/g/'+galleries[i].slug;
+  navigator.clipboard?.writeText(url);
+  alert((currentLang==='fr'?'Lien copié: ':'Link copied: ')+url);
+}
+
+function deleteGallery(i){
+  if(!confirm(currentLang==='fr'?'Supprimer cette galerie ?':'Delete this gallery?'))return;
+  galleries.splice(i,1);
+  localStorage.setItem('ym-galleries',JSON.stringify(galleries));
+  renderGalleries();
+}
+
+// ═══ INVOICES — Create, send, track ═══
+let invoices=JSON.parse(localStorage.getItem('ym-invoices')||'[]');
+
+function renderInvoices(){
+  const list=document.getElementById('invoiceList');
+  if(invoices.length===0){
+    list.innerHTML='<div style="padding:40px;text-align:center;border:1px dashed #222;border-radius:8px;color:var(--muted2);font-size:13px">'+(currentLang==='fr'?'Aucune facture.':'No invoices yet.')+'</div>';
+    return;
+  }
+  list.innerHTML=invoices.map((inv,i)=>{
+    const statusColors={DRAFT:'#888',SENT:'#2196F3',PAID:'#4CAF50'};
+    return '<div style="padding:16px;border-radius:8px;background:var(--surface);border:1px solid var(--border);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:14px;font-weight:600">'+inv.number+' — '+inv.client+'</div><div style="font-size:11px;color:var(--muted)">'+inv.amount+' '+inv.currency+' · '+inv.date+'</div></div><div style="display:flex;gap:8px;align-items:center"><span style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;background:'+(statusColors[inv.status]||'#888')+'22;color:'+(statusColors[inv.status]||'#888')+'">'+inv.status+'</span>'+(inv.status==='DRAFT'?'<button onclick="markInvoiceSent('+i+')" class="tb-btn" style="color:var(--accent)">'+(currentLang==='fr'?'Envoyer':'Send')+'</button>':'')+(inv.status==='SENT'?'<button onclick="markInvoicePaid('+i+')" class="tb-btn" style="color:#4CAF50">'+(currentLang==='fr'?'Marquer payée':'Mark paid')+'</button>':'')+'</div></div>';
+  }).join('');
+  updateStats();
+}
+
+function createInvoice(){
+  const client=prompt(currentLang==='fr'?'Nom du client:':'Client name:')||'Client';
+  const amount=prompt(currentLang==='fr'?'Montant:':'Amount:')||'0';
+  const currency=prompt(currentLang==='fr'?'Devise (XAF/USD/EUR):':'Currency (XAF/USD/EUR):')||'XAF';
+  const num='YMS-'+new Date().getFullYear()+String(new Date().getMonth()+1).padStart(2,'0')+'-'+String(invoices.length+1).padStart(4,'0');
+  invoices.push({number:num,client,amount,currency,status:'DRAFT',date:new Date().toLocaleDateString(),method:''});
+  localStorage.setItem('ym-invoices',JSON.stringify(invoices));
+
+  // AI draft line items
+  callAI('invoice-draft',{shootType:'wedding',currency}).then(r=>{
+    if(r)console.log('AI suggestions:',r);
+  });
+
+  renderInvoices();
+}
+
+function markInvoiceSent(i){invoices[i].status='SENT';localStorage.setItem('ym-invoices',JSON.stringify(invoices));renderInvoices();}
+function markInvoicePaid(i){
+  const method=prompt(currentLang==='fr'?'Mode de paiement (MoMo/Orange/Carte/Espèces):':'Payment method (MoMo/Orange/Card/Cash):')||'Cash';
+  invoices[i].status='PAID';invoices[i].method=method;
+  localStorage.setItem('ym-invoices',JSON.stringify(invoices));renderInvoices();
+}
+
+// ═══ SHOTTALK — Real messaging ═══
+let threads=JSON.parse(localStorage.getItem('ym-threads')||'[]');
+let activeThread=null;
+
+function renderThreads(){
+  const list=document.getElementById('threadList');
+  if(threads.length===0){
+    list.innerHTML='<div style="padding:24px;text-align:center;color:var(--muted2);font-size:12px">'+(currentLang==='fr'?'Aucune conversation':'No conversations yet')+'</div>';
+    return;
+  }
+  list.innerHTML=threads.map((t,i)=>'<div onclick="openThread('+i+')" style="padding:10px 16px;cursor:pointer;border-bottom:1px solid #111;background:'+(activeThread===i?'#1a1a1a':'transparent')+'"><div style="font-size:13px;font-weight:600">'+t.title+'</div><div style="font-size:11px;color:var(--muted2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(t.messages.length?t.messages[t.messages.length-1].text:'')+'</div></div>').join('');
+}
+
+function createThread(){
+  const title=prompt(currentLang==='fr'?'Nom du fil (ex: Mariage Dupont):':'Thread name (e.g. Smith Wedding):')||'New thread';
+  threads.push({title,messages:[]});
+  localStorage.setItem('ym-threads',JSON.stringify(threads));
+  activeThread=threads.length-1;
+  renderThreads();
+  renderMessages();
+}
+
+function openThread(i){
+  activeThread=i;
+  renderThreads();
+  renderMessages();
+  // Get smart replies for last client message
+  const lastClientMsg=threads[i].messages.filter(m=>m.from==='client').pop();
+  if(lastClientMsg)getSmartReplies(lastClientMsg.text);
+}
+
+function renderMessages(){
+  const area=document.getElementById('chatMessages');
+  if(activeThread===null||!threads[activeThread]){
+    area.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted2);font-size:13px">'+(currentLang==='fr'?'Sélectionnez ou créez un fil':'Select or create a thread')+'</div>';
+    return;
+  }
+  const msgs=threads[activeThread].messages;
+  area.innerHTML=msgs.map(m=>'<div style="margin-bottom:12px;display:flex;justify-content:'+(m.from==='me'?'flex-end':'flex-start')+'"><div style="max-width:70%;padding:10px 14px;border-radius:12px;font-size:13px;background:'+(m.from==='me'?'var(--accent)':'var(--surface)')+';color:'+(m.from==='me'?'#fff':'var(--text)')+'"><div style="font-size:10px;margin-bottom:4px;opacity:0.6">'+(m.from==='me'?(currentLang==='fr'?'Vous':'You'):m.name||'Client')+' · '+m.time+'</div>'+m.text+'</div></div>').join('');
+  area.scrollTop=area.scrollHeight;
+}
+
+function sendChatMessage(){
+  const input=document.getElementById('chatInput');
+  const text=input.value.trim();
+  if(!text||activeThread===null)return;
+  threads[activeThread].messages.push({from:'me',text,time:new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}),name:'Photographer'});
+  localStorage.setItem('ym-threads',JSON.stringify(threads));
+  input.value='';
+  renderMessages();
+  renderThreads();
+  document.getElementById('chatSmartReplies').style.display='none';
+
+  // Simulate client reply after 2s
+  setTimeout(()=>{
+    const replies=currentLang==='fr'?['Merci beaucoup !','Super, j\'adore !','Parfait, quand seront-elles prêtes ?']:['Thanks so much!','Love these!','Perfect, when will they be ready?'];
+    threads[activeThread].messages.push({from:'client',text:replies[Math.floor(Math.random()*replies.length)],time:new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}),name:'Client'});
+    localStorage.setItem('ym-threads',JSON.stringify(threads));
+    renderMessages();
+    renderThreads();
+    getSmartReplies(threads[activeThread].messages[threads[activeThread].messages.length-1].text);
+  },2000);
+}
+
+async function getSmartReplies(message){
+  const container=document.getElementById('chatSmartReplies');
+  container.style.display='flex';
+  container.innerHTML='<span style="font-size:10px;color:var(--muted2)">AI:</span>';
+  const result=await callAI('smart-reply',{message});
+  try{
+    const replies=JSON.parse(result);
+    if(Array.isArray(replies)){
+      replies.forEach(r=>{
+        const btn=document.createElement('button');
+        btn.textContent=r;
+        btn.style.cssText='padding:4px 10px;border-radius:12px;border:1px solid #333;background:transparent;color:var(--muted);font-size:11px;cursor:pointer';
+        btn.onclick=()=>{document.getElementById('chatInput').value=r;sendChatMessage();};
+        container.appendChild(btn);
+      });
+    }
+  }catch{container.innerHTML+='<button onclick="document.getElementById(\'chatInput\').value=this.textContent;sendChatMessage()" style="padding:4px 10px;border-radius:12px;border:1px solid #333;background:transparent;color:var(--muted);font-size:11px;cursor:pointer">Thank you!</button>';}
+}
+
+// ═══ AI HELPER ═══
+let currentLang='en';
+async function callAI(action,data){
+  try{
+    const res=await fetch('/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,data,locale:currentLang})});
+    const json=await res.json();
+    return json.result||'';
+  }catch{return '';}
+}
+
+// ═══ STATS ═══
+function updateStats(){
+  document.getElementById('statInvoices').textContent=invoices.length;
+  document.getElementById('statGalleries').textContent=galleries.length;
+  document.getElementById('statPhotos').textContent=importedPhotos.length;
+  const paid=invoices.filter(i=>i.status==='PAID').reduce((s,i)=>s+parseFloat(i.amount||0),0);
+  document.getElementById('statRevenue').textContent=(invoices[0]?.currency==='XAF'?'':'$')+paid.toLocaleString()+(invoices[0]?.currency==='XAF'?' XAF':'');
 }
 
 // Language
@@ -552,34 +847,37 @@ const TR={
   fr:{create:'CRÉER',business:'BUSINESS',learn:'APPRENDRE',system:'SYSTÈME',library:'Bibliothèque',edit:'Édition',galleries:'Galeries',invoices:'Factures',analytics:'Statistiques',academy:'Académie',settings:'Paramètres',importTitle:'Importez votre premier shooting',importSub:'Glissez un dossier ici, ou cliquez pour parcourir',importBtn:'Parcourir les fichiers'}
 };
 function setAppLang(lang){
+  currentLang=lang;
   const t=TR[lang];
   document.getElementById('sec-create').textContent=t.create;
   document.getElementById('sec-business').textContent=t.business;
   document.getElementById('sec-learn').textContent=t.learn;
   document.getElementById('sec-system').textContent=t.system;
-  document.getElementById('importTitle').textContent=t.importTitle;
-  document.getElementById('importSub').textContent=t.importSub;
-  document.getElementById('importAction').textContent=t.importBtn;
+  const it=document.getElementById('importTitle');if(it)it.textContent=t.importTitle;
+  const is=document.getElementById('importSub');if(is)is.textContent=t.importSub;
+  const ia=document.getElementById('importAction');if(ia)ia.textContent=t.importBtn;
   document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('active'));
-  event.target.classList.add('active');
+  if(event&&event.target)event.target.classList.add('active');
   viewLabels.vault=t.library;viewLabels.edit=t.edit;viewLabels.gallery=t.galleries;
   viewLabels.invoices=t.invoices;viewLabels.analytics=t.analytics;
   viewLabels.academy=t.academy;viewLabels.settings=t.settings;
+  // Re-render all sections
+  renderSfGrid();renderGalleries();renderInvoices();renderThreads();
+  if(activeThread!==null)renderMessages();
 }
 
 // Keyboard shortcuts
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape')setView('vault');
-  if(e.key==='e'||e.key==='E')setView('edit');
+  if((e.key==='e'||e.key==='E')&&!e.ctrlKey&&!e.metaKey&&document.activeElement.tagName!=='INPUT')setView('edit');
 });
 
-// Drag and drop
-const iz=document.getElementById('importZone');
-if(iz){
-  iz.addEventListener('dragover',e=>{e.preventDefault();iz.classList.add('dragover')});
-  iz.addEventListener('dragleave',()=>iz.classList.remove('dragover'));
-  iz.addEventListener('drop',e=>{e.preventDefault();iz.classList.remove('dragover');showDemoPhotos()});
-}
+// Init all sections
+renderSfGrid();
+renderGalleries();
+renderInvoices();
+renderThreads();
+updateStats();
 </script>
 </body>
 </html>

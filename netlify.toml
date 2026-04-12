@@ -25,6 +25,12 @@
   to = "/.netlify/functions/webhooks/:splat"
   status = 200
 
+# AI routes
+[[redirects]]
+  from = "/ai"
+  to = "/.netlify/functions/ai"
+  status = 200
+
 # SPA fallback for everything else
 [[redirects]]
   from = "/*"
