@@ -10,34 +10,26 @@ files:
   - dist/**/*
   - package.json
 
+forceCodeSigning: false
+
 win:
   target:
-    - nsis
     - portable
-  icon: resources/icon.ico
+  signAndEditExecutable: false
+  artifactName: "YmShotS-${version}-portable.${ext}"
 
 mac:
   target:
-    - dmg
     - zip
-  icon: resources/icon.icns
   category: public.app-category.photography
+  identity: null
+  artifactName: "YmShotS-${version}-mac.${ext}"
 
 linux:
   target:
     - AppImage
-    - deb
-  icon: resources/icon.png
   category: Graphics
-
-nsis:
-  oneClick: false
-  allowToChangeInstallationDirectory: true
-  installerIcon: resources/icon.ico
-  uninstallerIcon: resources/icon.ico
-
-dmg:
-  title: "YmShotS — Built by ta-tech"
+  artifactName: "YmShotS-${version}.${ext}"
 
 publish:
   provider: github
