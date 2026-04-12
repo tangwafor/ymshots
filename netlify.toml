@@ -1,0 +1,40 @@
+[build]
+  publish = "site/public"
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# API routes → serverless functions
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+
+# Gallery public routes
+[[redirects]]
+  from = "/g/*"
+  to = "/.netlify/functions/gallery/:splat"
+  status = 200
+
+# Webhook routes
+[[redirects]]
+  from = "/webhooks/*"
+  to = "/.netlify/functions/webhooks/:splat"
+  status = 200
+
+# SPA fallback for everything else
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[functions]
+  node_bundler = "esbuild"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

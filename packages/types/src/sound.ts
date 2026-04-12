@@ -1,0 +1,25 @@
+export const SOUND_EVENTS = {
+  shutter_click:          { type: 'sine+noise', durationMs: 80,  freqStart: 800, freqEnd: 200,   haptic: 'medium' },
+  shutter_burst:          { type: 'repeat',     count: 3, gapMs: 40, volumeEnvelope: [1.0, 0.7, 0.5], haptic: 'light_x3' },
+  ai_processing_start:    { type: 'sweep',      durationMs: 200, freqStart: 440, freqEnd: 880,   haptic: 'none' },
+  ai_processing_complete: { type: 'chime_pair', tones: [880, 1320], durationMs: 120, gapMs: 60,  haptic: 'success' },
+  signatureai_applied:    { type: 'arpeggio',   notes: ['C4', 'E4', 'G4'], durationMsEach: 80, reverbTailMs: 300, haptic: 'light_pulse' },
+  slider_tick:            { type: 'tick',       durationMs: 12,  freq: 2000,                      haptic: 'selection' },
+  reset_to_default:       { type: 'pop_down',   durationMs: 40,  freqStart: 600, freqEnd: 300,    haptic: 'rigid' },
+  layer_add:              { type: 'ding',       durationMs: 60,  freq: 1200,                      haptic: 'light' },
+  mask_detected:          { type: 'whoosh',     durationMs: 180,                                   haptic: 'none' },
+  before_after_toggle:    { type: 'swish',      durationMs: 80,  pan: 'left_to_right',             haptic: 'selection' },
+  flag_photo:             { type: 'stamp',      durationMs: 50,  freq: 400,                        haptic: 'medium_rigid' },
+  reject_photo:           { type: 'pop',        durationMs: 40,  freq: 300,                        haptic: 'medium' },
+  star_rating:            { type: 'multi_ding', noteHz: 523, durationMsEach: 40,                   haptic: 'selection_per_star' },
+  export_started:         { type: 'launch',     durationMs: 200,                                   haptic: 'medium_notification' },
+  export_complete:        { type: 'arpeggio_triumph', notes: ['C4', 'E4', 'G4', 'C5'], durationMsEach: 100, timbre: 'warm_bell', reverbMs: 400, haptic: 'success_heavy' },
+  gallery_sent:           { type: 'whoosh_high', durationMs: 150,                                  haptic: 'medium_notification' },
+  client_selected_photo:  { type: 'chime',      durationMs: 80,  freq: 1000,                      haptic: 'light' },
+  invoice_paid:           { type: 'arpeggio_bright', notes: ['C5', 'E5', 'G5'], durationMsEach: 100, tail: true, haptic: 'success_heavy_x2' },
+  error:                  { type: 'double_tap', count: 2, durationMs: 30, freq: 200,               haptic: 'error_x2' },
+  sync_complete:          { type: 'confirm_pair', tones: [600, 900], durationMs: 60,               haptic: 'light' },
+  tether_connected:       { type: 'beep_ascending', count: 3, durationMs: 67,                     haptic: 'medium_x3' },
+} as const;
+
+export type SoundEventKey = keyof typeof SOUND_EVENTS;

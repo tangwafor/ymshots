@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>YmShotS — your moments. your shots.</title>
+<meta name="description" content="The photography app that learns your eye. Edit, deliver, get paid — one app. Built by ta-tech.">
+<meta name="theme-color" content="#0A0A0A">
+<meta property="og:title" content="YmShotS — your moments. your shots.">
+<meta property="og:description" content="The photography app that learns your eye. SignatureAI, GalleryBox, ShotTalk, StyleForge — everything a photographer needs.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ymshots.com">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📷</text></svg>">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--accent:#E0943A;--bg:#0A0A0A;--text:#fff;--muted:rgba(255,255,255,0.4)}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+
+/* Hero */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 20px;position:relative}
+.hero-logo{font-size:clamp(48px,10vw,72px);font-weight:800;letter-spacing:-0.04em;opacity:0;animation:fadeUp .8s ease .2s forwards}
+.hero-tagline{font-size:clamp(14px,2vw,18px);color:var(--muted);letter-spacing:.1em;text-transform:lowercase;margin-top:8px;opacity:0;animation:fadeUp .8s ease .5s forwards}
+.hero-pitch{font-size:clamp(16px,2.5vw,22px);color:rgba(255,255,255,.7);max-width:560px;line-height:1.6;margin-top:40px;opacity:0;animation:fadeUp .8s ease .8s forwards}
+.hero-cta{margin-top:36px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center;opacity:0;animation:fadeUp .8s ease 1.1s forwards}
+.btn{padding:14px 32px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;border:none;transition:transform .15s,box-shadow .15s}
+.btn:hover{transform:translateY(-1px)}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 4px 20px rgba(224,148,58,.3)}
+.btn-secondary{background:transparent;color:var(--muted);border:1px solid #333}
+.scroll-hint{position:absolute;bottom:32px;font-size:24px;color:rgba(255,255,255,.15);animation:bounce 2s ease infinite 3s}
+
+/* Sections */
+section{padding:80px 20px;max-width:960px;margin:0 auto}
+.section-label{font-size:11px;font-weight:600;color:var(--accent);letter-spacing:.15em;text-transform:uppercase;margin-bottom:8px}
+.section-title{font-size:clamp(28px,4vw,40px);font-weight:700;line-height:1.2;margin-bottom:16px}
+.section-body{font-size:16px;color:var(--muted);line-height:1.7;max-width:540px}
+
+/* Engine grid */
+.engines{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:32px}
+.engine-card{padding:16px;border-radius:8px;background:#111;border:1px solid #1a1a1a;transition:border-color .2s}
+.engine-card:hover{border-color:var(--accent)}
+.engine-name{font-size:14px;font-weight:600;color:var(--accent)}
+.engine-desc{font-size:12px;color:var(--muted);margin-top:4px}
+
+/* Stats */
+.stats{display:flex;gap:24px;flex-wrap:wrap;margin-top:32px}
+.stat{text-align:center}
+.stat-value{font-size:36px;font-weight:800;color:var(--accent)}
+.stat-label{font-size:12px;color:var(--muted);margin-top:4px}
+
+/* Pricing */
+.pricing{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:32px}
+.plan{width:260px;padding:28px 20px;border-radius:12px;background:#111;border:1px solid #1a1a1a;text-align:left}
+.plan.featured{border-color:rgba(224,148,58,.4)}
+.plan-name{font-size:13px;font-weight:600;margin-bottom:8px}
+.plan-price{font-size:32px;font-weight:800}
+.plan-period{font-size:12px;color:var(--muted);margin-left:4px}
+.plan-features{list-style:none;padding:0;margin:20px 0;font-size:13px}
+.plan-features li{padding:4px 0;color:var(--muted)}
+.plan-features li::before{content:'✓ ';color:var(--accent)}
+.plan-btn{width:100%;padding:12px;border-radius:6px;border:none;font-size:13px;font-weight:600;cursor:pointer}
+
+/* Footer */
+footer{text-align:center;padding:40px 20px;border-top:1px solid #111}
+.footer-sig{font-size:11px;color:rgba(255,255,255,.2)}
+.footer-links{margin-top:12px;display:flex;gap:20px;justify-content:center;font-size:12px}
+.footer-links a{color:rgba(255,255,255,.3)}
+
+/* Lang toggle */
+.lang-toggle{position:fixed;top:16px;right:16px;z-index:100;display:flex;gap:4px}
+.lang-btn{padding:4px 10px;border-radius:4px;border:1px solid #333;background:transparent;color:var(--muted);font-size:11px;cursor:pointer}
+.lang-btn.active{background:rgba(224,148,58,.15);color:var(--accent);border-color:var(--accent)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes bounce{0%,20%,50%,80%,100%{transform:translateY(0)}40%{transform:translateY(-8px)}60%{transform:translateY(-4px)}}
+
+@media(max-width:600px){
+  .pricing{flex-direction:column;align-items:center}
+  .stats{justify-content:center}
+  section{padding:60px 16px}
+}
+</style>
+</head>
+<body>
+
+<!-- Language toggle -->
+<div class="lang-toggle">
+  <button class="lang-btn active" onclick="setLang('en')" id="btn-en">EN</button>
+  <button class="lang-btn" onclick="setLang('fr')" id="btn-fr">FR</button>
+</div>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-logo">YmShotS</div>
+  <div class="hero-tagline" data-en="your moments. your shots." data-fr="vos moments. vos clichés.">your moments. your shots.</div>
+  <div class="hero-pitch" data-en="The photography app that learns your eye. Edit, deliver, chat with clients, get paid — one app. No other tool does this." data-fr="L'app photo qui apprend votre œil. Éditez, livrez, discutez avec vos clients, soyez payé — une seule app. Aucun autre outil ne fait ça.">The photography app that learns your eye. Edit, deliver, chat with clients, get paid — one app. No other tool does this.</div>
+  <div class="hero-cta">
+    <button class="btn btn-primary" data-en="Download for free" data-fr="Télécharger gratuitement">Download for free</button>
+    <button class="btn btn-secondary" data-en="See how it works" data-fr="Voir comment ça marche" onclick="document.getElementById('engines').scrollIntoView({behavior:'smooth'})">See how it works</button>
+  </div>
+  <div class="scroll-hint">&#8964;</div>
+</div>
+
+<!-- Engines -->
+<section id="engines">
+  <div class="section-label">THE ENGINES</div>
+  <div class="section-title" data-en="One app. Every tool." data-fr="Une seule app. Tous les outils.">One app. Every tool.</div>
+  <div class="section-body" data-en="Other apps make you juggle six subscriptions. YmShotS puts everything in one place." data-fr="Les autres apps vous font jongler avec six abonnements. YmShotS met tout au même endroit.">Other apps make you juggle six subscriptions. YmShotS puts everything in one place.</div>
+  <div class="engines">
+    <div class="engine-card"><div class="engine-name">SignatureAI</div><div class="engine-desc" data-en="Learns your editing style. Applies it in one click." data-fr="Apprend votre style d'édition. L'applique en un clic.">Learns your editing style. Applies it in one click.</div></div>
+    <div class="engine-card"><div class="engine-name">ShotTalk</div><div class="engine-desc" data-en="Chat with clients inside the app. No WhatsApp needed." data-fr="Discutez avec vos clients dans l'app. Sans WhatsApp.">Chat with clients inside the app. No WhatsApp needed.</div></div>
+    <div class="engine-card"><div class="engine-name">StyleForge</div><div class="engine-desc" data-en="Cartoon, watercolor, sketch — 12 AI creative effects." data-fr="Cartoon, aquarelle, croquis — 12 effets créatifs IA.">Cartoon, watercolor, sketch — 12 AI creative effects.</div></div>
+    <div class="engine-card"><div class="engine-name">GalleryBox</div><div class="engine-desc" data-en="Dark, elegant client galleries. Your brand, not ours." data-fr="Galeries clients sombres et élégantes. Votre marque, pas la nôtre.">Dark, elegant client galleries. Your brand, not ours.</div></div>
+    <div class="engine-card"><div class="engine-name">PayShot</div><div class="engine-desc" data-en="MoMo, Orange Money, card, or cash — get paid your way." data-fr="MoMo, Orange Money, carte ou espèces — soyez payé comme vous voulez.">MoMo, Orange Money, card, or cash — get paid your way.</div></div>
+    <div class="engine-card"><div class="engine-name">RawPulse</div><div class="engine-desc" data-en="Professional RAW editing pipeline. Non-destructive." data-fr="Pipeline d'édition RAW professionnel. Non-destructif.">Professional RAW editing pipeline. Non-destructive.</div></div>
+    <div class="engine-card"><div class="engine-name">SharpEye</div><div class="engine-desc" data-en="AI culling — scores focus, faces, expressions." data-fr="Tri IA — évalue netteté, visages, expressions.">AI culling — scores focus, faces, expressions.</div></div>
+    <div class="engine-card"><div class="engine-name">AcademyMode</div><div class="engine-desc" data-en="30 lessons. Learn while you shoot." data-fr="30 leçons. Apprenez en photographiant.">30 lessons. Learn while you shoot.</div></div>
+    <div class="engine-card"><div class="engine-name">ChromaDesk</div><div class="engine-desc" data-en="HSL, tone curves, color wheels, LUTs." data-fr="TSL, courbes de tons, roues de couleur, LUTs.">HSL, tone curves, color wheels, LUTs.</div></div>
+    <div class="engine-card"><div class="engine-name">GlowKit</div><div class="engine-desc" data-en="Natural skin retouching. Less is more." data-fr="Retouche peau naturelle. Moins c'est mieux.">Natural skin retouching. Less is more.</div></div>
+  </div>
+</section>
+
+<!-- SignatureAI spotlight -->
+<section>
+  <div class="section-label">THE MOAT</div>
+  <div class="section-title" data-en="An AI that edits exactly like you." data-fr="Une IA qui édite exactement comme vous.">An AI that edits exactly like you.</div>
+  <div class="section-body" data-en="After just 10 edits, SignatureAI starts learning your style. By 50, it can edit any photo the way you would. By 100, your style is unmistakable. All AI runs on your machine — your photos never leave your computer." data-fr="Après seulement 10 éditions, SignatureAI commence à apprendre votre style. À 50, elle peut éditer n'importe quelle photo comme vous le feriez. À 100, votre style est inimitable. Toute l'IA tourne sur votre machine — vos photos ne quittent jamais votre ordinateur.">After just 10 edits, SignatureAI starts learning your style. By 50, it can edit any photo the way you would. By 100, your style is unmistakable. All AI runs on your machine — your photos never leave your computer.</div>
+  <div class="stats">
+    <div class="stat"><div class="stat-value">10</div><div class="stat-label" data-en="edits to start learning" data-fr="éditions pour commencer">edits to start learning</div></div>
+    <div class="stat"><div class="stat-value">96%</div><div class="stat-label" data-en="less editing time" data-fr="de temps d'édition en moins">less editing time</div></div>
+    <div class="stat"><div class="stat-value">0</div><div class="stat-label" data-en="photos sent to cloud" data-fr="photos envoyées au cloud">photos sent to cloud</div></div>
+  </div>
+</section>
+
+<!-- Pricing -->
+<section id="pricing">
+  <div class="section-label" data-en="PRICING" data-fr="TARIFS">PRICING</div>
+  <div class="section-title" data-en="Choose your plan." data-fr="Choisissez votre plan.">Choose your plan.</div>
+  <div class="pricing">
+    <div class="plan">
+      <div class="plan-name" style="color:#888">FREE</div>
+      <div><span class="plan-price">$0</span><span class="plan-period" data-en="forever" data-fr="pour toujours">forever</span></div>
+      <ul class="plan-features">
+        <li data-en="15 AI edits/day" data-fr="15 éditions IA/jour">15 AI edits/day</li>
+        <li data-en="All manual RAW tools" data-fr="Tous les outils RAW manuels">All manual RAW tools</li>
+        <li data-en="30 filters" data-fr="30 filtres">30 filters</li>
+        <li data-en="Export up to 24MP" data-fr="Export jusqu'à 24MP">Export up to 24MP</li>
+      </ul>
+      <button class="plan-btn" style="background:#222;color:var(--muted)" data-en="Start free" data-fr="Commencer gratuitement">Start free</button>
+    </div>
+    <div class="plan featured">
+      <div class="plan-name" style="color:var(--accent)">PRO</div>
+      <div><span class="plan-price">$9.99</span><span class="plan-period" data-en="/mo or $79 one-time" data-fr="/mois ou $79 une fois">/mo or $79 one-time</span></div>
+      <ul class="plan-features">
+        <li data-en="Unlimited AI" data-fr="IA illimitée">Unlimited AI</li>
+        <li>SignatureAI</li>
+        <li data-en="150+ filters" data-fr="150+ filtres">150+ filters</li>
+        <li>GalleryBox + ShotTalk</li>
+        <li>PayShot + StyleForge</li>
+        <li>AcademyMode</li>
+        <li data-en="Mobile sync" data-fr="Synchronisation mobile">Mobile sync</li>
+      </ul>
+      <button class="plan-btn" style="background:var(--accent);color:#fff" data-en="Go Pro" data-fr="Passer Pro">Go Pro</button>
+    </div>
+    <div class="plan">
+      <div class="plan-name" style="color:#7C4DFF">STUDIO</div>
+      <div><span class="plan-price">$24.99</span><span class="plan-period" data-en="/mo" data-fr="/mois">/mo</span></div>
+      <ul class="plan-features">
+        <li data-en="Everything in Pro" data-fr="Tout dans Pro">Everything in Pro</li>
+        <li data-en="3 team seats" data-fr="3 postes d'équipe">3 team seats</li>
+        <li data-en="Shared style library" data-fr="Bibliothèque de styles partagée">Shared style library</li>
+        <li data-en="Team analytics" data-fr="Statistiques d'équipe">Team analytics</li>
+        <li data-en="White-label galleries" data-fr="Galeries marque blanche">White-label galleries</li>
+      </ul>
+      <button class="plan-btn" style="background:#222;color:var(--muted)" data-en="Go Studio" data-fr="Passer Studio">Go Studio</button>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-sig">YmShotS v1.0 — Built by ta-tech</div>
+  <div class="footer-links">
+    <a href="mailto:hello@ymshots.com">Contact</a>
+    <a href="#pricing" data-en="Pricing" data-fr="Tarifs">Pricing</a>
+    <a href="#engines" data-en="Features" data-fr="Fonctionnalités">Features</a>
+  </div>
+</footer>
+
+<script>
+function setLang(lang) {
+  document.querySelectorAll('[data-'+lang+']').forEach(el => {
+    el.textContent = el.getAttribute('data-'+lang);
+  });
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-'+lang).classList.add('active');
+  document.documentElement.lang = lang;
+  localStorage.setItem('ymshots-lang', lang);
+}
+// Auto-detect
+const saved = localStorage.getItem('ymshots-lang');
+const browserLang = navigator.language.startsWith('fr') ? 'fr' : 'en';
+setLang(saved || browserLang);
+
+// Register service worker for offline
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>

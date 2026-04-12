@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "YmShotS",
+    "slug": "ymshots",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "ymshots",
+    "splash": {
+      "backgroundColor": "#0A0A0A"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.tatech.ymshots"
+    },
+    "android": {
+      "package": "com.tatech.ymshots",
+      "adaptiveIcon": {
+        "backgroundColor": "#0A0A0A"
+      }
+    },
+    "plugins": [
+      "expo-camera",
+      "expo-haptics"
+    ]
+  }
+}

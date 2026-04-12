@@ -1,0 +1,1096 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ═══════════════════════════════════════════════════════
+// ENUMS
+// ═══════════════════════════════════════════════════════
+
+enum PlanTier {
+  FREE
+  PRO
+  STUDIO
+}
+
+enum DeviceType {
+  MOBILE
+  DESKTOP
+  TABLET
+}
+
+enum Theme {
+  LIGHT
+  DARK
+  SYSTEM
+}
+
+enum ExportFormat {
+  JPEG
+  TIFF
+  PNG
+  WEBP
+  RAW_XMP
+  HEIF
+}
+
+enum GridSize {
+  SMALL
+  MEDIUM
+  LARGE
+}
+
+enum ShootType {
+  WEDDING
+  PORTRAIT
+  COMMERCIAL
+  EVENT
+  STREET
+  PRODUCT
+  WILDLIFE
+  OTHER
+}
+
+enum ShootStatus {
+  IMPORTING
+  CULLING
+  EDITING
+  DELIVERING
+  ARCHIVED
+}
+
+enum FileFormat {
+  RAW
+  JPEG
+  HEIF
+  PNG
+  TIFF
+}
+
+enum FlagStatus {
+  NONE
+  FLAGGED
+  REJECTED
+}
+
+enum ColorLabel {
+  RED
+  YELLOW
+  GREEN
+  BLUE
+  PURPLE
+  NONE
+}
+
+enum KeywordSource {
+  USER
+  AI
+}
+
+enum EditEngine {
+  RAWPULSE
+  PIXELFORGE
+  GLOWKIT
+  FACECAST
+  CHROMADESK
+  GRAINLAB
+  SCENEDROP
+  CLEANSLATE
+}
+
+enum LayerType {
+  ADJUSTMENT
+  MASK
+  STAMP
+  HEALING
+  TEXT
+}
+
+enum MaskType {
+  SUBJECT
+  SKY
+  SKIN
+  LUMINOSITY
+  GRADIENT
+  BRUSH
+  AI_CUSTOM
+}
+
+enum StyleShootType {
+  WEDDING
+  PORTRAIT
+  COMMERCIAL
+  ALL
+}
+
+enum PresetSource {
+  USER
+  LOOKVAULT
+  MARKETPLACE
+}
+
+enum BeautyTool {
+  SMOOTH
+  BLEMISH
+  GLOW
+  TEETH
+  EYES
+  CONTOUR
+  RESHAPE
+  MAKEUP
+  HAIR_COLOR
+  HAIR_STYLE
+  BEARD
+  AGE_MORPH
+  GENDER_SWAP
+  TAN
+  PORE_REFINE
+}
+
+enum GalleryStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+  ARCHIVED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  VIEWED
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum ShootPhase {
+  SHOOTING
+  IMPORTING
+  CULLING
+  EDITING
+  DELIVERING
+}
+
+enum ConnectionType {
+  USB
+  WIFI
+}
+
+enum JobStatus {
+  QUEUED
+  PROCESSING
+  COMPLETE
+  FAILED
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  MASTER
+}
+
+enum LessonStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum AcademyLevel {
+  BEGINNER
+  APPRENTICE
+  PROFESSIONAL
+  MASTER
+  LEGEND
+}
+
+enum PitchSource {
+  WELCOME
+  PLAN_GATE
+  ABOUT
+  SHARE_LINK
+  UPGRADE_NUDGE
+}
+
+enum PaymentMethod {
+  MOBILE_MONEY_MTN
+  MOBILE_MONEY_ORANGE
+  CARD
+  BANK_TRANSFER
+  CASH
+  STRIPE
+  FLUTTERWAVE
+  OTHER
+}
+
+enum PaymentProvider {
+  NOTCHPAY
+  CINETPAY
+  FLUTTERWAVE
+  STRIPE
+  MANUAL
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+// ═══════════════════════════════════════════════════════
+// CORE MODELS
+// ═══════════════════════════════════════════════════════
+
+model User {
+  id                  String    @id @default(uuid())
+  email               String    @unique
+  passwordHash        String
+  fullName            String
+  avatarUrl           String?
+  planTier            PlanTier  @default(FREE)
+  planExpiresAt       DateTime?
+  stripeCustomerId    String?
+  timezone            String    @default("UTC")
+  locale              String    @default("en-US")
+  onboardingCompleted Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  sessions             UserSession[]
+  preferences          UserPreferences?
+  shoots               Shoot[]
+  clients              Client[]
+  styleProfiles        StyleProfile[]
+  presets              Preset[]
+  galleries            Gallery[]
+  invoices             Invoice[]
+  tetherSessions       TetherSession[]
+  exportJobs           ExportJob[]
+  analyticsEvents      AnalyticsEvent[]
+  timeLog              ShootTimeLog[]
+  revenueSnaps         RevenueSnapshot[]
+  soundLog             SoundEventLog[]
+  academyProgress      UserAcademyProgress[]
+  academyStats         UserAcademyStats?
+  challengeSubmissions ChallengeSubmission[]
+  shotTalkThreads      ShotTalkThread[]
+  styleForgeJobs       StyleForgeJob[]
+
+  @@map("users")
+}
+
+model UserSession {
+  id               String     @id @default(uuid())
+  userId           String
+  deviceName       String?
+  deviceType       DeviceType
+  refreshTokenHash String
+  lastActiveAt     DateTime   @default(now())
+  expiresAt        DateTime
+  createdAt        DateTime   @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_sessions")
+}
+
+model UserPreferences {
+  userId               String       @id
+  theme                Theme        @default(SYSTEM)
+  soundEnabled         Boolean      @default(true)
+  soundVolume          Decimal      @default(0.70) @db.Decimal(3, 2)
+  hapticsEnabled       Boolean      @default(true)
+  defaultExportFormat  ExportFormat @default(JPEG)
+  defaultExportQuality Int          @default(92)
+  defaultColorProfile  String       @default("sRGB")
+  gridSize             GridSize     @default(MEDIUM)
+  showHistogram        Boolean      @default(true)
+  currency             String       @default("USD") @db.Char(3)
+  showCoachTips        Boolean      @default(true)
+  updatedAt            DateTime     @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}
+
+// ═══════════════════════════════════════════════════════
+// SHOOTS & PHOTOS
+// ═══════════════════════════════════════════════════════
+
+model Shoot {
+  id            String      @id @default(uuid())
+  userId        String
+  clientId      String?
+  name          String
+  shootType     ShootType
+  shootDate     DateTime?   @db.Date
+  locationName  String?
+  locationLat   Decimal?    @db.Decimal(9, 6)
+  locationLng   Decimal?    @db.Decimal(9, 6)
+  totalPhotos   Int         @default(0)
+  flaggedCount  Int         @default(0)
+  status        ShootStatus @default(IMPORTING)
+  coverPhotoId  String?
+  notes         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  client       Client?        @relation(fields: [clientId], references: [id])
+  photos       Photo[]
+  galleries    Gallery[]
+  invoices     Invoice[]
+  timeLogs     ShootTimeLog[]
+  tethSessions TetherSession[]
+
+  @@map("shoots")
+}
+
+model Photo {
+  id               String     @id @default(uuid())
+  shootId          String
+  userId           String
+  filenameOriginal String
+  filenameStored   String
+  storagePath      String
+  fileFormat       FileFormat
+  cameraMake       String?
+  cameraModel      String?
+  lensModel        String?
+  focalLengthMm    Decimal?   @db.Decimal(6, 1)
+  aperture         Decimal?   @db.Decimal(4, 1)
+  shutterSpeed     String?
+  iso              Int?
+  widthPx          Int
+  heightPx         Int
+  fileSizeBytes    BigInt
+  capturedAt       DateTime?
+  gpsLat           Decimal?   @db.Decimal(9, 6)
+  gpsLng           Decimal?   @db.Decimal(9, 6)
+  flagStatus       FlagStatus @default(NONE)
+  starRating       Int?       @db.SmallInt
+  colorLabel       ColorLabel @default(NONE)
+  isInFocus        Boolean?
+  faceCount        Int?       @db.SmallInt
+  expressionScore  Decimal?   @db.Decimal(3, 2)
+  sharpnessScore   Decimal?   @db.Decimal(3, 2)
+  thumbnailPath    String?
+  previewPath      String?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  shoot           Shoot               @relation(fields: [shootId], references: [id], onDelete: Cascade)
+  keywords        PhotoKeyword[]
+  collectionItems CollectionPhoto[]
+  editSessions    EditSession[]
+  faceSessions    FaceSession[]
+  galleryPhotos   GalleryPhoto[]
+  trainingPairs   StyleTrainingPair[]
+  styleForgeJobs  StyleForgeJob[]
+
+  @@map("photos")
+}
+
+model PhotoKeyword {
+  photoId String
+  keyword String
+  source  KeywordSource
+
+  photo Photo @relation(fields: [photoId], references: [id], onDelete: Cascade)
+
+  @@id([photoId, keyword])
+  @@map("photo_keywords")
+}
+
+model PhotoCollection {
+  id              String   @id @default(uuid())
+  userId          String
+  name            String
+  isSmart         Boolean  @default(false)
+  smartFilterJson Json?
+  createdAt       DateTime @default(now())
+
+  photos CollectionPhoto[]
+
+  @@map("photo_collections")
+}
+
+model CollectionPhoto {
+  collectionId String
+  photoId      String
+  sortOrder    Int
+
+  collection PhotoCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  photo      Photo           @relation(fields: [photoId], references: [id], onDelete: Cascade)
+
+  @@id([collectionId, photoId])
+  @@map("collection_photos")
+}
+
+// ═══════════════════════════════════════════════════════
+// EDITING
+// ═══════════════════════════════════════════════════════
+
+model EditSession {
+  id          String   @id @default(uuid())
+  photoId     String
+  userId      String
+  isActive    Boolean  @default(true)
+  editVersion Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  photo        Photo            @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  adjustments  EditAdjustment[]
+  history      EditHistory[]
+  layers       Layer[]
+  faceSessions FaceSession[]
+
+  @@map("edit_sessions")
+}
+
+model EditAdjustment {
+  id            String     @id @default(uuid())
+  sessionId     String
+  engine        EditEngine
+  adjustmentKey String
+  valueNumber   Decimal?   @db.Decimal(10, 4)
+  valueJson     Json?
+  appliedAt     DateTime   @default(now())
+
+  session EditSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("edit_adjustments")
+}
+
+model EditHistory {
+  id           String   @id @default(uuid())
+  sessionId    String
+  snapshotJson Json
+  label        String?
+  createdAt    DateTime @default(now())
+
+  session EditSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("edit_history")
+}
+
+model Layer {
+  id         String    @id @default(uuid())
+  sessionId  String
+  name       String
+  type       LayerType
+  blendMode  String    @default("normal")
+  opacity    Decimal   @default(1.00) @db.Decimal(3, 2)
+  isVisible  Boolean   @default(true)
+  sortOrder  Int
+  paramsJson Json?
+  createdAt  DateTime  @default(now())
+
+  session EditSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  masks   Mask[]
+
+  @@map("layers")
+}
+
+model Mask {
+  id           String   @id @default(uuid())
+  layerId      String
+  type         MaskType
+  feather      Decimal  @default(0) @db.Decimal(5, 2)
+  density      Decimal  @default(1.00) @db.Decimal(3, 2)
+  invert       Boolean  @default(false)
+  maskDataPath String?
+  createdAt    DateTime @default(now())
+
+  layer Layer @relation(fields: [layerId], references: [id], onDelete: Cascade)
+
+  @@map("masks")
+}
+
+// ═══════════════════════════════════════════════════════
+// AI — STYLE & BEAUTY
+// ═══════════════════════════════════════════════════════
+
+model StyleProfile {
+  id                 String         @id @default(uuid())
+  userId             String
+  name               String
+  shootType          StyleShootType @default(ALL)
+  confidenceScore    Decimal?       @db.Decimal(3, 2)
+  trainingPhotoCount Int            @default(0)
+  modelVersion       String?
+  modelPath          String?
+  isActive           Boolean        @default(true)
+  isPublic           Boolean        @default(false)
+  swatchColor        String         @default("#E0943A") @db.Char(7)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trainingPairs StyleTrainingPair[]
+
+  @@map("style_profiles")
+}
+
+model StyleTrainingPair {
+  id             String   @id @default(uuid())
+  profileId      String
+  photoId        String
+  beforeEditJson Json
+  afterEditJson  Json
+  qualityWeight  Decimal  @default(1.00) @db.Decimal(3, 2)
+  createdAt      DateTime @default(now())
+
+  profile StyleProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  photo   Photo        @relation(fields: [photoId], references: [id], onDelete: Cascade)
+
+  @@map("style_training_pairs")
+}
+
+model Preset {
+  id              String       @id @default(uuid())
+  userId          String
+  name            String
+  category        String?
+  source          PresetSource @default(USER)
+  adjustmentsJson Json
+  thumbnailPath   String?
+  downloadCount   Int          @default(0)
+  priceCents      Int          @default(0)
+  createdAt       DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("presets")
+}
+
+model FaceSession {
+  id               String   @id @default(uuid())
+  photoId          String
+  sessionId        String
+  faceIndex        Int      @db.SmallInt
+  detectionBoxJson Json
+  landmarkJson     Json?
+  createdAt        DateTime @default(now())
+
+  photo       Photo              @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  editSession EditSession        @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  adjustments BeautyAdjustment[]
+
+  @@map("face_sessions")
+}
+
+model BeautyAdjustment {
+  id            String     @id @default(uuid())
+  faceSessionId String
+  tool          BeautyTool
+  intensity     Decimal    @db.Decimal(3, 2)
+  paramsJson    Json?
+  appliedAt     DateTime   @default(now())
+
+  faceSession FaceSession @relation(fields: [faceSessionId], references: [id], onDelete: Cascade)
+
+  @@map("beauty_adjustments")
+}
+
+model MakeupLook {
+  id            String   @id @default(uuid())
+  userId        String
+  name          String
+  lookJson      Json
+  thumbnailPath String?
+  isFavorite    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  @@map("makeup_looks")
+}
+
+// ═══════════════════════════════════════════════════════
+// CLIENTS & GALLERIES
+// ═══════════════════════════════════════════════════════
+
+model Client {
+  id              String   @id @default(uuid())
+  userId          String
+  fullName        String
+  email           String
+  phone           String?
+  company         String?
+  notes           String?
+  totalSpentCents BigInt   @default(0)
+  shootCount      Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shoots   Shoot[]
+  invoices Invoice[]
+
+  @@map("clients")
+}
+
+model Gallery {
+  id               String        @id @default(uuid())
+  shootId          String
+  userId           String
+  slug             String        @unique
+  title            String
+  subtitle         String?
+  passwordHash     String?
+  watermarkEnabled Boolean       @default(false)
+  watermarkText    String?
+  downloadAllowed  Boolean       @default(false)
+  expiresAt        DateTime?
+  viewCount        Int           @default(0)
+  status           GalleryStatus @default(DRAFT)
+  createdAt        DateTime      @default(now())
+
+  shoot  Shoot          @relation(fields: [shootId], references: [id], onDelete: Cascade)
+  user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photos GalleryPhoto[]
+
+  @@map("galleries")
+}
+
+model GalleryPhoto {
+  galleryId      String
+  photoId        String
+  sortOrder      Int
+  clientSelected Boolean @default(false)
+  clientComment  String?
+
+  gallery Gallery @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+  photo   Photo   @relation(fields: [photoId], references: [id], onDelete: Cascade)
+
+  @@id([galleryId, photoId])
+  @@map("gallery_photos")
+}
+
+// ═══════════════════════════════════════════════════════
+// INVOICING
+// ═══════════════════════════════════════════════════════
+
+model Invoice {
+  id                    String         @id @default(uuid())
+  userId                String
+  clientId              String
+  shootId               String?
+  invoiceNumber         String         @unique
+  status                InvoiceStatus  @default(DRAFT)
+  subtotalCents         BigInt
+  taxRate               Decimal        @db.Decimal(5, 4)
+  taxCents              BigInt
+  totalCents            BigInt
+  currency              String         @db.Char(3)
+  dueDate               DateTime?      @db.Date
+  paidAt                DateTime?
+  paymentMethod         PaymentMethod?
+  paymentProvider       PaymentProvider?
+  providerTransactionId String?
+  notes                 String?
+  createdAt             DateTime       @default(now())
+
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  client    Client            @relation(fields: [clientId], references: [id])
+  shoot     Shoot?            @relation(fields: [shootId], references: [id])
+  lineItems InvoiceLineItem[]
+  payments  Payment[]
+
+  @@map("invoices")
+}
+
+model InvoiceLineItem {
+  id             String  @id @default(uuid())
+  invoiceId      String
+  description    String
+  quantity       Decimal @db.Decimal(8, 2)
+  unitPriceCents BigInt
+  totalCents     BigInt
+  sortOrder      Int
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("invoice_line_items")
+}
+
+model Payment {
+  id                  String          @id @default(uuid())
+  invoiceId           String
+  userId              String
+  amountCents         BigInt
+  currency            String          @db.Char(3)
+  method              PaymentMethod
+  provider            PaymentProvider
+  providerTxId        String?
+  providerResponse    Json?
+  status              PaymentStatus   @default(PENDING)
+  phoneNumber         String?
+  cashReceivedBy      String?
+  cashReceiptPhotoUrl String?
+  cashNote            String?
+  failureReason       String?
+  paidAt              DateTime?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model PaymentProviderConfig {
+  id          String          @id @default(uuid())
+  userId      String
+  provider    PaymentProvider
+  isActive    Boolean         @default(true)
+  configJson  Json
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@unique([userId, provider])
+  @@map("payment_provider_configs")
+}
+
+// ═══════════════════════════════════════════════════════
+// ANALYTICS & BUSINESS
+// ═══════════════════════════════════════════════════════
+
+model ShootTimeLog {
+  id              String     @id @default(uuid())
+  shootId         String
+  userId          String
+  phase           ShootPhase
+  startedAt       DateTime
+  endedAt         DateTime?
+  durationSeconds Int?
+
+  shoot Shoot @relation(fields: [shootId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("shoot_time_logs")
+}
+
+model AnalyticsEvent {
+  id            String   @id @default(uuid())
+  userId        String
+  eventType     String
+  eventDataJson Json?
+  sessionId     String?
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("analytics_events")
+}
+
+model RevenueSnapshot {
+  id                String   @id @default(uuid())
+  userId            String
+  periodMonth       String   @db.Char(7)
+  totalRevenueCents BigInt
+  invoicesSent      Int
+  invoicesPaid      Int
+  shootsCompleted   Int
+  avgJobValueCents  BigInt
+  calculatedAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, periodMonth])
+  @@map("revenue_snapshots")
+}
+
+// ═══════════════════════════════════════════════════════
+// TETHERING & EXPORT
+// ═══════════════════════════════════════════════════════
+
+model TetherSession {
+  id             String         @id @default(uuid())
+  userId         String
+  shootId        String
+  cameraMake     String?
+  cameraModel    String?
+  connectionType ConnectionType
+  startedAt      DateTime       @default(now())
+  endedAt        DateTime?
+  photosReceived Int            @default(0)
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shoot Shoot @relation(fields: [shootId], references: [id], onDelete: Cascade)
+
+  @@map("tether_sessions")
+}
+
+model ExportJob {
+  id               String       @id @default(uuid())
+  userId           String
+  photoIdsJson     Json
+  format           ExportFormat
+  quality          Int?         @db.SmallInt
+  longEdgePx       Int?
+  colorProfile     String?
+  sharpening       Int?         @db.SmallInt
+  watermarkEnabled Boolean      @default(false)
+  stripMetadata    Boolean      @default(false)
+  renamePattern    String?
+  outputPath       String?
+  status           JobStatus    @default(QUEUED)
+  progressPct      Int          @default(0) @db.SmallInt
+  startedAt        DateTime?
+  completedAt      DateTime?
+  createdAt        DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("export_jobs")
+}
+
+// ═══════════════════════════════════════════════════════
+// SOUNDPULSE LOGGING
+// ═══════════════════════════════════════════════════════
+
+model SoundEventLog {
+  id           String   @id @default(uuid())
+  userId       String
+  eventKey     String
+  playedAt     DateTime @default(now())
+  volumeAtTime Decimal  @db.Decimal(3, 2)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sound_events_log")
+}
+
+// ═══════════════════════════════════════════════════════
+// ACADEMY
+// ═══════════════════════════════════════════════════════
+
+model AcademyLesson {
+  id              String      @id @default(uuid())
+  slug            String      @unique
+  title           String
+  description     String
+  skillLevel      SkillLevel
+  engine          EditEngine?
+  durationSeconds Int
+  xpReward        Int         @default(10)
+  sortOrder       Int
+  isPublished     Boolean     @default(true)
+  contentJson     Json
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  progress   UserAcademyProgress[]
+  challenges AcademyChallenge[]
+
+  @@map("academy_lessons")
+}
+
+model UserAcademyProgress {
+  id           String       @id @default(uuid())
+  userId       String
+  lessonId     String
+  status       LessonStatus @default(NOT_STARTED)
+  completedAt  DateTime?
+  xpEarned     Int          @default(0)
+  attemptCount Int          @default(0)
+  lastSeenAt   DateTime?
+
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson AcademyLesson @relation(fields: [lessonId], references: [id])
+
+  @@unique([userId, lessonId])
+  @@map("user_academy_progress")
+}
+
+model AcademyChallenge {
+  id                String   @id @default(uuid())
+  lessonId          String
+  title             String
+  description       String
+  samplePhotoPath   String
+  referenceEditJson Json
+  scoringEngine     String   @default("signatureai")
+  xpReward          Int      @default(25)
+  createdAt         DateTime @default(now())
+
+  lesson      AcademyLesson         @relation(fields: [lessonId], references: [id])
+  submissions ChallengeSubmission[]
+
+  @@map("academy_challenges")
+}
+
+model ChallengeSubmission {
+  id              String   @id @default(uuid())
+  challengeId     String
+  userId          String
+  editJson        Json
+  similarityScore Decimal  @db.Decimal(4, 3)
+  passed          Boolean
+  submittedAt     DateTime @default(now())
+
+  challenge AcademyChallenge @relation(fields: [challengeId], references: [id])
+  user      User             @relation(fields: [userId], references: [id])
+
+  @@map("challenge_submissions")
+}
+
+model UserAcademyStats {
+  userId           String       @id
+  totalXp          Int          @default(0)
+  currentStreak    Int          @default(0)
+  longestStreak    Int          @default(0)
+  lessonsCompleted Int          @default(0)
+  challengesPassed Int          @default(0)
+  currentLevel     AcademyLevel @default(BEGINNER)
+  lastActiveDate   DateTime?
+  updatedAt        DateTime     @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_academy_stats")
+}
+
+// ═══════════════════════════════════════════════════════
+// PITCH DECK
+// ═══════════════════════════════════════════════════════
+
+model PitchView {
+  id           String      @id @default(uuid())
+  userId       String?
+  source       PitchSource
+  slideReached Int         @default(1)
+  converted    Boolean     @default(false)
+  planChosen   PlanTier?
+  viewedAt     DateTime    @default(now())
+
+  @@map("pitch_views")
+}
+
+// ═══════════════════════════════════════════════════════
+// SHOTTALK — In-app communication
+// ═══════════════════════════════════════════════════════
+
+enum MessageSender {
+  PHOTOGRAPHER
+  CLIENT
+  SYSTEM
+}
+
+enum ThreadStatus {
+  ACTIVE
+  ARCHIVED
+  CLOSED
+}
+
+model ShotTalkThread {
+  id           String       @id @default(uuid())
+  userId       String
+  clientId     String?
+  shootId      String?
+  galleryId    String?
+  title        String
+  status       ThreadStatus @default(ACTIVE)
+  lastMessageAt DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  user     User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages ShotTalkMessage[]
+
+  @@map("shottalk_threads")
+}
+
+model ShotTalkMessage {
+  id         String        @id @default(uuid())
+  threadId   String
+  senderId   String?
+  senderType MessageSender
+  senderName String
+  body       String
+  photoId    String?
+  isRead     Boolean       @default(false)
+  createdAt  DateTime      @default(now())
+
+  thread      ShotTalkThread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  attachments ShotTalkAttachment[]
+  annotations PhotoAnnotation[]
+
+  @@map("shottalk_messages")
+}
+
+model ShotTalkAttachment {
+  id        String   @id @default(uuid())
+  messageId String
+  fileName  String
+  fileType  String
+  filePath  String
+  sizeByes  BigInt
+  createdAt DateTime @default(now())
+
+  message ShotTalkMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@map("shottalk_attachments")
+}
+
+model PhotoAnnotation {
+  id        String   @id @default(uuid())
+  messageId String
+  photoId   String
+  pinX      Decimal  @db.Decimal(5, 4)
+  pinY      Decimal  @db.Decimal(5, 4)
+  note      String
+  resolved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  message ShotTalkMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@map("photo_annotations")
+}
+
+// ═══════════════════════════════════════════════════════
+// STYLEFORGE — AI Creative Effects
+// ═══════════════════════════════════════════════════════
+
+enum StyleForgeEffect {
+  CARTOON
+  COMIC
+  WATERCOLOR
+  OIL_PAINTING
+  PENCIL_SKETCH
+  CHARCOAL
+  POP_ART
+  THREE_D_CHARACTER
+  ANIME
+  CARICATURE
+  MOSAIC
+  NEON_GLOW
+}
+
+model StyleForgeJob {
+  id           String           @id @default(uuid())
+  userId       String
+  photoId      String
+  effect       StyleForgeEffect
+  intensity    Decimal          @default(1.00) @db.Decimal(3, 2)
+  paramsJson   Json?
+  outputPath   String?
+  status       JobStatus        @default(QUEUED)
+  processingMs Int?
+  createdAt    DateTime         @default(now())
+  completedAt  DateTime?
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photo Photo @relation(fields: [photoId], references: [id], onDelete: Cascade)
+
+  @@map("styleforge_jobs")
+}

@@ -1,0 +1,45 @@
+appId: com.tatech.ymshots
+productName: YmShotS
+copyright: "© 2026 ta-tech"
+
+directories:
+  output: out
+  buildResources: resources
+
+files:
+  - dist/**/*
+  - package.json
+
+win:
+  target:
+    - nsis
+    - portable
+  icon: resources/icon.ico
+
+mac:
+  target:
+    - dmg
+    - zip
+  icon: resources/icon.icns
+  category: public.app-category.photography
+
+linux:
+  target:
+    - AppImage
+    - deb
+  icon: resources/icon.png
+  category: Graphics
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  installerIcon: resources/icon.ico
+  uninstallerIcon: resources/icon.ico
+
+dmg:
+  title: "YmShotS — Built by ta-tech"
+
+publish:
+  provider: github
+  owner: tangwafor
+  repo: ymshots
