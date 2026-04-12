@@ -187,13 +187,14 @@ footer{text-align:center;padding:40px 20px;border-top:1px solid #111}
     <form id="waitlistForm" onsubmit="submitWaitlist(event)">
       <input id="waitlistName" type="text" required placeholder="Your name / Votre nom" style="width:100%;padding:12px;border-radius:6px;border:1px solid #333;background:#0A0A0A;color:#fff;font-size:14px;margin-bottom:10px">
       <input id="waitlistEmail" type="email" required placeholder="Email" style="width:100%;padding:12px;border-radius:6px;border:1px solid #333;background:#0A0A0A;color:#fff;font-size:14px;margin-bottom:10px">
-      <input id="waitlistPhone" type="tel" placeholder="Phone / WhatsApp (optional)" style="width:100%;padding:12px;border-radius:6px;border:1px solid #333;background:#0A0A0A;color:#fff;font-size:14px;margin-bottom:16px">
+      <input id="waitlistPhone" type="tel" placeholder="Phone / WhatsApp (optional)" style="width:100%;padding:12px;border-radius:6px;border:1px solid #333;background:#0A0A0A;color:#fff;font-size:14px;margin-bottom:10px">
+      <input id="waitlistCode" type="text" placeholder="Pilot code (optional) / Code pilote" style="width:100%;padding:12px;border-radius:6px;border:1px solid #333;background:#0A0A0A;color:#fff;font-size:14px;margin-bottom:16px">
       <button type="submit" class="btn btn-primary" style="width:100%;padding:14px" data-en="Join waitlist" data-fr="Rejoindre la liste">Join waitlist</button>
     </form>
     <div id="waitlistSuccess" style="display:none;padding:20px 0">
       <div style="font-size:32px;margin-bottom:12px">&#10003;</div>
-      <div style="font-size:16px;font-weight:600;color:#E0943A" data-en="You're on the list!" data-fr="Vous êtes inscrit !">You're on the list!</div>
-      <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:8px" data-en="We'll notify you when YmShotS is ready." data-fr="Nous vous préviendrons quand YmShotS sera prêt.">We'll notify you when YmShotS is ready.</div>
+      <div id="successTitle" style="font-size:16px;font-weight:600;color:#E0943A" data-en="You're on the list!" data-fr="Vous êtes inscrit !">You're on the list!</div>
+      <div id="successMsg" style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:8px" data-en="We'll notify you when YmShotS is ready." data-fr="Nous vous préviendrons quand YmShotS sera prêt.">We'll notify you when YmShotS is ready.</div>
     </div>
   </div>
 </div>
@@ -253,12 +254,20 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') closeWaitlist();
 });
 
+// Valid pilot codes — these unlock STUDIO for free
+const PILOT_CODES = ['YMSHOTS-PILOT-2026', 'TATECH-VIP', 'PILOT237'];
+
 async function submitWaitlist(e) {
   e.preventDefault();
   const name = document.getElementById('waitlistName').value.trim();
   const email = document.getElementById('waitlistEmail').value.trim();
   const phone = document.getElementById('waitlistPhone').value.trim();
+  const code = document.getElementById('waitlistCode').value.trim().toUpperCase();
   if (!name || !email) return;
+
+  // Check pilot code
+  const isPilot = PILOT_CODES.includes(code);
+  const assignedPlan = isPilot ? 'STUDIO' : selectedPlan;
 
   // Save to Supabase
   try {
@@ -273,7 +282,9 @@ async function submitWaitlist(e) {
         "fullName": name,
         email: email,
         phone: phone || null,
-        plan: selectedPlan,
+        plan: assignedPlan,
+        "pilotCode": code || null,
+        "isPilot": isPilot,
         locale: document.documentElement.lang || 'en',
         source: 'website',
       }),
@@ -282,11 +293,21 @@ async function submitWaitlist(e) {
     // Silently fail — still show success to user
   }
 
-  // Show success
+  // Show success with pilot-specific message
   document.getElementById('waitlistForm').style.display = 'none';
   document.getElementById('waitlistSuccess').style.display = 'block';
-  const lang = localStorage.getItem('ymshots-lang') || 'en';
-  setLang(lang);
+
+  if (isPilot) {
+    const lang = localStorage.getItem('ymshots-lang') || 'en';
+    document.getElementById('successTitle').textContent = lang === 'fr' ? 'Bienvenue, pilote !' : 'Welcome, pilot!';
+    document.getElementById('successTitle').style.color = '#7C4DFF';
+    document.getElementById('successMsg').textContent = lang === 'fr'
+      ? 'Accès STUDIO complet activé. Toutes les fonctionnalités sont à vous.'
+      : 'Full STUDIO access activated. Every feature is yours.';
+  } else {
+    const lang = localStorage.getItem('ymshots-lang') || 'en';
+    setLang(lang);
+  }
 }
 
 // Smooth scroll for footer links
