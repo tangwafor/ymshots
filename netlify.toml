@@ -1,6 +1,8 @@
 [build]
+  base = "/"
   publish = "site/public"
   functions = "netlify/functions"
+  command = "echo 'YmShotS static site deployed'"
 
 [build.environment]
   NODE_VERSION = "20"
