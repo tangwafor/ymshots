@@ -199,6 +199,32 @@ footer{text-align:center;padding:40px 20px;border-top:1px solid #111}
   </div>
 </div>
 
+<!-- YM Floating Assistant -->
+<style>
+.ym-fab{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background:#E0943A;border:none;color:#fff;font-size:20px;font-weight:800;cursor:pointer;z-index:200;box-shadow:0 4px 20px rgba(224,148,58,0.4);transition:transform .2s}
+.ym-fab:hover{transform:scale(1.1)}
+.ym-panel{position:fixed;bottom:90px;right:24px;width:360px;max-height:500px;background:#111;border:1px solid #1a1a1a;border-radius:12px;z-index:200;display:none;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,0.5);overflow:hidden}
+.ym-panel.open{display:flex}
+.ym-msgs{flex:1;overflow-y:auto;padding:12px 16px;max-height:340px}
+.ym-m{margin-bottom:10px;display:flex}.ym-m-a{justify-content:flex-start}.ym-m-u{justify-content:flex-end}
+.ym-b{max-width:85%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.5}
+.ym-b-a{background:#1a1a1a;color:rgba(255,255,255,0.8);border-bottom-left-radius:4px}
+.ym-b-u{background:#E0943A;color:#fff;border-bottom-right-radius:4px}
+@media(max-width:500px){.ym-panel{width:calc(100vw - 32px);right:16px}}
+</style>
+<button class="ym-fab" onclick="toggleYmLanding()" title="Ask YM">YM</button>
+<div class="ym-panel" id="ymLandingPanel">
+  <div style="padding:14px 16px;border-bottom:1px solid #1a1a1a;display:flex;justify-content:space-between;align-items:center">
+    <div><div style="font-size:14px;font-weight:700">YM <span style="font-weight:400;color:#E0943A;font-size:11px">AI Assistant</span></div><div style="font-size:10px;color:rgba(255,255,255,0.2)" id="ymLandingSub">Ask me anything about YmShotS</div></div>
+    <button onclick="toggleYmLanding()" style="background:none;border:none;color:#666;font-size:18px;cursor:pointer">&times;</button>
+  </div>
+  <div class="ym-msgs" id="ymLandingMsgs"></div>
+  <div style="padding:10px 12px;border-top:1px solid #1a1a1a;display:flex;gap:8px">
+    <input id="ymLandingInput" placeholder="Ask YM..." style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid #222;background:#0A0A0A;color:#fff;font-size:13px;outline:none" onkeydown="if(event.key==='Enter')sendYmLanding()">
+    <button onclick="sendYmLanding()" style="padding:8px 14px;border-radius:8px;border:none;background:#E0943A;color:#fff;font-size:12px;font-weight:600;cursor:pointer">Send</button>
+  </div>
+</div>
+
 <!-- Footer -->
 <footer>
   <div class="footer-sig">YmShotS v1.0 | Built by ta-tech</div>
@@ -318,6 +344,41 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
     if (target) target.scrollIntoView({ behavior: 'smooth' });
   });
 });
+
+// YM Landing Assistant
+let ymLandingOpen=false;
+let ymLandingHistory=[];
+function toggleYmLanding(){
+  ymLandingOpen=!ymLandingOpen;
+  document.getElementById('ymLandingPanel').classList.toggle('open',ymLandingOpen);
+  if(ymLandingOpen&&ymLandingHistory.length===0){
+    const lang=localStorage.getItem('ymshots-lang')||'en';
+    const w=lang==='fr'?'Salut ! Je suis YM. Posez-moi n\'importe quelle question sur YmShotS.':'Hey! I\'m YM. Ask me anything about YmShotS.';
+    addYmLandingMsg('a',w);
+    document.getElementById('ymLandingSub').textContent=lang==='fr'?'Posez-moi vos questions sur YmShotS':'Ask me anything about YmShotS';
+  }
+  if(ymLandingOpen)document.getElementById('ymLandingInput').focus();
+}
+function addYmLandingMsg(from,text){
+  const d=document.createElement('div');d.className='ym-m ym-m-'+from;
+  d.innerHTML='<div class="ym-b ym-b-'+from+'">'+(from==='a'?'<strong style="color:#E0943A">YM</strong> ':'')+text.replace(/\n/g,'<br>')+'</div>';
+  document.getElementById('ymLandingMsgs').appendChild(d);
+  document.getElementById('ymLandingMsgs').scrollTop=999999;
+  ymLandingHistory.push({role:from==='a'?'assistant':'user',content:text});
+}
+async function sendYmLanding(){
+  const input=document.getElementById('ymLandingInput');
+  const msg=input.value.trim();if(!msg)return;input.value='';
+  addYmLandingMsg('u',msg);
+  const typing=document.createElement('div');typing.className='ym-m ym-m-a';typing.id='ym-lt';
+  typing.innerHTML='<div class="ym-b ym-b-a" style="color:#E0943A;font-size:11px">YM is thinking...</div>';
+  document.getElementById('ymLandingMsgs').appendChild(typing);
+  try{
+    const res=await fetch('/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'ym-chat',data:{message:msg,history:ymLandingHistory.slice(-10)},locale:localStorage.getItem('ymshots-lang')||'en'})});
+    const json=await res.json();document.getElementById('ym-lt')?.remove();
+    addYmLandingMsg('a',json.result||'I couldn\'t process that. Try again!');
+  }catch{document.getElementById('ym-lt')?.remove();addYmLandingMsg('a','Connection error. Please try again.');}
+}
 </script>
 </body>
 </html>

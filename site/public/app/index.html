@@ -109,10 +109,50 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;heigh
 .lang-btn.active{background:rgba(224,148,58,0.15);color:var(--accent);border-color:var(--accent)}
 
 @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse-glow{0%,100%{box-shadow:0 0 8px rgba(224,148,58,0.3)}50%{box-shadow:0 0 20px rgba(224,148,58,0.6)}}
 @media(max-width:768px){.sidebar{width:60px}.sb-item span:last-child,.sb-section,.sb-tagline,.sb-user-name,.sb-badge{display:none}.sb-logo-text{font-size:11px}}
+
+/* YM Assistant */
+.ym-fab{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background:var(--accent);border:none;color:#fff;font-size:20px;font-weight:800;cursor:pointer;z-index:200;box-shadow:0 4px 20px rgba(224,148,58,0.4);transition:transform .2s;animation:pulse-glow 3s ease infinite}
+.ym-fab:hover{transform:scale(1.1)}
+.ym-panel{position:fixed;bottom:90px;right:24px;width:360px;max-height:500px;background:#111;border:1px solid var(--border);border-radius:12px;z-index:200;display:none;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,0.5);overflow:hidden}
+.ym-panel.open{display:flex}
+.ym-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.ym-title{font-size:14px;font-weight:700}
+.ym-subtitle{font-size:10px;color:var(--muted2)}
+.ym-close{background:none;border:none;color:#666;font-size:18px;cursor:pointer}
+.ym-messages{flex:1;overflow-y:auto;padding:12px 16px;max-height:340px}
+.ym-msg{margin-bottom:10px;display:flex}
+.ym-msg-ym{justify-content:flex-start}
+.ym-msg-user{justify-content:flex-end}
+.ym-bubble{max-width:85%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.5}
+.ym-bubble-ym{background:#1a1a1a;color:rgba(255,255,255,0.8);border-bottom-left-radius:4px}
+.ym-bubble-user{background:var(--accent);color:#fff;border-bottom-right-radius:4px}
+.ym-input-row{padding:10px 12px;border-top:1px solid var(--border);display:flex;gap:8px}
+.ym-input{flex:1;padding:8px 12px;border-radius:8px;border:1px solid #222;background:#0A0A0A;color:#fff;font-size:13px;outline:none}
+.ym-send{padding:8px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:600;cursor:pointer}
+.ym-typing{color:var(--accent);font-size:11px;padding:4px 0}
+@media(max-width:500px){.ym-panel{width:calc(100vw - 32px);right:16px;bottom:80px}}
 </style>
 </head>
 <body>
+
+<!-- YM Floating Assistant -->
+<button class="ym-fab" onclick="toggleYM()" id="ymFab" title="YM Assistant">YM</button>
+<div class="ym-panel" id="ymPanel">
+  <div class="ym-header">
+    <div>
+      <div class="ym-title">YM <span style="font-weight:400;color:var(--accent);font-size:11px">AI Assistant</span></div>
+      <div class="ym-subtitle" id="ymSubtitle">I know everything about YmShotS. Ask me anything.</div>
+    </div>
+    <button class="ym-close" onclick="toggleYM()">&times;</button>
+  </div>
+  <div class="ym-messages" id="ymMessages"></div>
+  <div class="ym-input-row">
+    <input class="ym-input" id="ymInput" placeholder="Ask YM anything..." onkeydown="if(event.key==='Enter')sendYM()">
+    <button class="ym-send" onclick="sendYM()">Send</button>
+  </div>
+</div>
 
 <!-- Splash Screen -->
 <div class="splash" id="splash">
@@ -878,6 +918,69 @@ renderGalleries();
 renderInvoices();
 renderThreads();
 updateStats();
+
+// ═══ YM — AI ASSISTANT ═══
+let ymOpen=false;
+let ymHistory=[];
+
+function toggleYM(){
+  ymOpen=!ymOpen;
+  document.getElementById('ymPanel').classList.toggle('open',ymOpen);
+  if(ymOpen&&ymHistory.length===0){
+    // Welcome message
+    const welcome=currentLang==='fr'
+      ?'Salut ! Je suis YM, votre assistant IA. Je connais tout sur YmShotS. Demandez-moi comment importer des photos, utiliser SignatureAI, créer une galerie, envoyer une facture, ou n\'importe quoi d\'autre !'
+      :'Hey! I\'m YM, your AI assistant. I know everything about YmShotS. Ask me how to import photos, use SignatureAI, create a gallery, send an invoice, or anything else!';
+    addYmMessage('ym',welcome);
+    // Quick suggestions
+    const suggestions=currentLang==='fr'
+      ?['Comment fonctionne SignatureAI ?','Comment créer une galerie ?','Quels sont les raccourcis clavier ?','Comment facturer un client ?']
+      :['How does SignatureAI work?','How do I create a gallery?','What are the keyboard shortcuts?','How do I invoice a client?'];
+    const sugDiv=document.createElement('div');
+    sugDiv.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-top:8px';
+    suggestions.forEach(s=>{
+      const btn=document.createElement('button');
+      btn.textContent=s;
+      btn.style.cssText='padding:4px 10px;border-radius:12px;border:1px solid #333;background:transparent;color:var(--accent);font-size:11px;cursor:pointer';
+      btn.onclick=()=>{document.getElementById('ymInput').value=s;sendYM();};
+      sugDiv.appendChild(btn);
+    });
+    document.getElementById('ymMessages').appendChild(sugDiv);
+  }
+  if(ymOpen)document.getElementById('ymInput').focus();
+  // Update subtitle language
+  document.getElementById('ymSubtitle').textContent=currentLang==='fr'?'Je connais tout sur YmShotS. Demandez-moi.':'I know everything about YmShotS. Ask me anything.';
+}
+
+function addYmMessage(from,text){
+  const div=document.createElement('div');
+  div.className='ym-msg ym-msg-'+from;
+  div.innerHTML='<div class="ym-bubble ym-bubble-'+from+'">'+(from==='ym'?'<strong style="color:var(--accent)">YM</strong> ':'')+text.replace(/\n/g,'<br>')+'</div>';
+  document.getElementById('ymMessages').appendChild(div);
+  document.getElementById('ymMessages').scrollTop=999999;
+  ymHistory.push({role:from==='ym'?'assistant':'user',content:text});
+}
+
+async function sendYM(){
+  const input=document.getElementById('ymInput');
+  const msg=input.value.trim();
+  if(!msg)return;
+  input.value='';
+  addYmMessage('user',msg);
+
+  // Typing indicator
+  const typing=document.createElement('div');
+  typing.className='ym-msg ym-msg-ym';
+  typing.innerHTML='<div class="ym-bubble ym-bubble-ym ym-typing">YM is thinking...</div>';
+  typing.id='ym-typing';
+  document.getElementById('ymMessages').appendChild(typing);
+  document.getElementById('ymMessages').scrollTop=999999;
+
+  const result=await callAI('ym-chat',{message:msg,history:ymHistory.slice(-10)});
+  document.getElementById('ym-typing')?.remove();
+
+  addYmMessage('ym',result||'Sorry, I couldn\'t process that. Try again!');
+}
 </script>
 </body>
 </html>
