@@ -95,7 +95,7 @@ footer{text-align:center;padding:40px 20px;border-top:1px solid #111}
   <div class="hero-tagline" data-en="your moments. your shots." data-fr="vos moments. vos clichés.">your moments. your shots.</div>
   <div class="hero-pitch" data-en="The photography app that learns your eye. Edit, deliver, chat with clients, get paid — one app. No other tool does this." data-fr="L'app photo qui apprend votre œil. Éditez, livrez, discutez avec vos clients, soyez payé — une seule app. Aucun autre outil ne fait ça.">The photography app that learns your eye. Edit, deliver, chat with clients, get paid — one app. No other tool does this.</div>
   <div class="hero-cta">
-    <button class="btn btn-primary" data-en="Download for free" data-fr="Télécharger gratuitement">Download for free</button>
+    <button class="btn btn-primary" data-en="Get early access" data-fr="Accès anticipé" onclick="openWaitlist()">Get early access</button>
     <button class="btn btn-secondary" data-en="See how it works" data-fr="Voir comment ça marche" onclick="document.getElementById('engines').scrollIntoView({behavior:'smooth'})">See how it works</button>
   </div>
   <div class="scroll-hint">&#8964;</div>
@@ -146,7 +146,7 @@ footer{text-align:center;padding:40px 20px;border-top:1px solid #111}
         <li data-en="30 filters" data-fr="30 filtres">30 filters</li>
         <li data-en="Export up to 24MP" data-fr="Export jusqu'à 24MP">Export up to 24MP</li>
       </ul>
-      <button class="plan-btn" style="background:#222;color:var(--muted)" data-en="Start free" data-fr="Commencer gratuitement">Start free</button>
+      <button class="plan-btn" style="background:#222;color:var(--muted)" data-en="Start free" data-fr="Commencer gratuitement" onclick="openWaitlist('FREE')">Start free</button>
     </div>
     <div class="plan featured">
       <div class="plan-name" style="color:var(--accent)">PRO</div>
@@ -160,7 +160,7 @@ footer{text-align:center;padding:40px 20px;border-top:1px solid #111}
         <li>AcademyMode</li>
         <li data-en="Mobile sync" data-fr="Synchronisation mobile">Mobile sync</li>
       </ul>
-      <button class="plan-btn" style="background:var(--accent);color:#fff" data-en="Go Pro" data-fr="Passer Pro">Go Pro</button>
+      <button class="plan-btn" style="background:var(--accent);color:#fff" data-en="Go Pro" data-fr="Passer Pro" onclick="openWaitlist('PRO')">Go Pro</button>
     </div>
     <div class="plan">
       <div class="plan-name" style="color:#7C4DFF">STUDIO</div>
@@ -172,10 +172,31 @@ footer{text-align:center;padding:40px 20px;border-top:1px solid #111}
         <li data-en="Team analytics" data-fr="Statistiques d'équipe">Team analytics</li>
         <li data-en="White-label galleries" data-fr="Galeries marque blanche">White-label galleries</li>
       </ul>
-      <button class="plan-btn" style="background:#222;color:var(--muted)" data-en="Go Studio" data-fr="Passer Studio">Go Studio</button>
+      <button class="plan-btn" style="background:#222;color:var(--muted)" data-en="Go Studio" data-fr="Passer Studio" onclick="openWaitlist('STUDIO')">Go Studio</button>
     </div>
   </div>
 </section>
+
+<!-- Waitlist Modal -->
+<div id="waitlistModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.8);align-items:center;justify-content:center">
+  <div style="background:#111;border:1px solid #222;border-radius:12px;padding:32px;max-width:400px;width:90%;text-align:center;position:relative">
+    <button onclick="closeWaitlist()" style="position:absolute;top:12px;right:16px;background:none;border:none;color:#666;font-size:20px;cursor:pointer">&times;</button>
+    <div style="font-size:24px;font-weight:700;margin-bottom:8px" data-en="Get early access" data-fr="Accès anticipé">Get early access</div>
+    <div id="waitlistPlan" style="display:inline-block;padding:2px 10px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(224,148,58,0.15);color:#E0943A;margin-bottom:16px"></div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.4);margin-bottom:20px;line-height:1.6" data-en="YmShotS is launching soon. Join the waitlist and be the first to know." data-fr="YmShotS arrive bientôt. Rejoignez la liste d'attente.">YmShotS is launching soon. Join the waitlist and be the first to know.</div>
+    <form id="waitlistForm" onsubmit="submitWaitlist(event)">
+      <input id="waitlistName" type="text" required placeholder="Your name / Votre nom" style="width:100%;padding:12px;border-radius:6px;border:1px solid #333;background:#0A0A0A;color:#fff;font-size:14px;margin-bottom:10px">
+      <input id="waitlistEmail" type="email" required placeholder="Email" style="width:100%;padding:12px;border-radius:6px;border:1px solid #333;background:#0A0A0A;color:#fff;font-size:14px;margin-bottom:10px">
+      <input id="waitlistPhone" type="tel" placeholder="Phone / WhatsApp (optional)" style="width:100%;padding:12px;border-radius:6px;border:1px solid #333;background:#0A0A0A;color:#fff;font-size:14px;margin-bottom:16px">
+      <button type="submit" class="btn btn-primary" style="width:100%;padding:14px" data-en="Join waitlist" data-fr="Rejoindre la liste">Join waitlist</button>
+    </form>
+    <div id="waitlistSuccess" style="display:none;padding:20px 0">
+      <div style="font-size:32px;margin-bottom:12px">&#10003;</div>
+      <div style="font-size:16px;font-weight:600;color:#E0943A" data-en="You're on the list!" data-fr="Vous êtes inscrit !">You're on the list!</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:8px" data-en="We'll notify you when YmShotS is ready." data-fr="Nous vous préviendrons quand YmShotS sera prêt.">We'll notify you when YmShotS is ready.</div>
+    </div>
+  </div>
+</div>
 
 <!-- Footer -->
 <footer>
@@ -206,6 +227,76 @@ setLang(saved || browserLang);
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
 }
+
+// Waitlist modal
+let selectedPlan = 'FREE';
+function openWaitlist(plan) {
+  selectedPlan = plan || 'FREE';
+  document.getElementById('waitlistPlan').textContent = selectedPlan;
+  document.getElementById('waitlistModal').style.display = 'flex';
+  document.getElementById('waitlistForm').style.display = 'block';
+  document.getElementById('waitlistSuccess').style.display = 'none';
+  document.getElementById('waitlistName').focus();
+  // Re-apply current language to new modal elements
+  const lang = localStorage.getItem('ymshots-lang') || 'en';
+  setLang(lang);
+}
+function closeWaitlist() {
+  document.getElementById('waitlistModal').style.display = 'none';
+}
+// Close on backdrop click
+document.getElementById('waitlistModal').addEventListener('click', function(e) {
+  if (e.target === this) closeWaitlist();
+});
+// Close on Escape
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeWaitlist();
+});
+
+async function submitWaitlist(e) {
+  e.preventDefault();
+  const name = document.getElementById('waitlistName').value.trim();
+  const email = document.getElementById('waitlistEmail').value.trim();
+  const phone = document.getElementById('waitlistPhone').value.trim();
+  if (!name || !email) return;
+
+  // Save to Supabase
+  try {
+    await fetch('https://heckailuvcwmnfdtubhd.supabase.co/rest/v1/waitlist', {
+      method: 'POST',
+      headers: {
+        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhlY2thaWx1dmN3bW5mZHR1YmhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwMDc2NDYsImV4cCI6MjA5MTU4MzY0Nn0.6D1J6AGngSLZPWcOEPM61iY-XDlZwKHC6erSgexDsYI',
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal',
+      },
+      body: JSON.stringify({
+        "fullName": name,
+        email: email,
+        phone: phone || null,
+        plan: selectedPlan,
+        locale: document.documentElement.lang || 'en',
+        source: 'website',
+      }),
+    });
+  } catch(err) {
+    // Silently fail — still show success to user
+  }
+
+  // Show success
+  document.getElementById('waitlistForm').style.display = 'none';
+  document.getElementById('waitlistSuccess').style.display = 'block';
+  const lang = localStorage.getItem('ymshots-lang') || 'en';
+  setLang(lang);
+}
+
+// Smooth scroll for footer links
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', function(e) {
+    e.preventDefault();
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth' });
+  });
+});
 </script>
 </body>
 </html>
