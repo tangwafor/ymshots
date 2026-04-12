@@ -366,36 +366,179 @@ function setView(v){
   document.getElementById('viewLabel').textContent=viewLabels[v]||v;
 }
 
-// Import demo
-document.getElementById('importBtn').addEventListener('click',showDemoPhotos);
-document.getElementById('importAction').addEventListener('click',showDemoPhotos);
-function showDemoPhotos(){
+// Import — real file picker from device
+const fileInput=document.createElement('input');
+fileInput.type='file';
+fileInput.multiple=true;
+fileInput.accept='image/*,.cr2,.cr3,.nef,.arw,.dng,.raf,.orf,.rw2,.pef';
+fileInput.style.display='none';
+document.body.appendChild(fileInput);
+
+let importedPhotos=[];
+
+document.getElementById('importBtn').addEventListener('click',()=>fileInput.click());
+document.getElementById('importAction').addEventListener('click',()=>fileInput.click());
+
+fileInput.addEventListener('change',function(){
+  if(!this.files||this.files.length===0)return;
+  importPhotos(Array.from(this.files));
+});
+
+function importPhotos(files){
+  importedPhotos=files;
   const grid=document.createElement('div');
   grid.className='photo-grid';
-  for(let i=0;i<24;i++){
+
+  files.forEach((file,i)=>{
     const thumb=document.createElement('div');
     thumb.className='photo-thumb';
-    thumb.style.background='hsl('+(i*37%360)+',15%,'+(12+i%5*2)+'%)';
-    thumb.innerHTML='<div class="photo-placeholder">DSC_'+String(i+1).padStart(4,'0')+'</div>';
-    thumb.ondblclick=()=>setView('edit');
+    thumb.style.position='relative';
+
+    if(file.type.startsWith('image/')){
+      // Real image — show actual thumbnail
+      const img=document.createElement('img');
+      img.style.cssText='width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .3s';
+      const url=URL.createObjectURL(file);
+      img.onload=()=>{img.style.opacity='1'};
+      img.src=url;
+      thumb.appendChild(img);
+    } else {
+      // RAW file — show filename placeholder
+      thumb.style.background='hsl('+(i*37%360)+',15%,'+(12+i%5*2)+'%)';
+      thumb.innerHTML='<div class="photo-placeholder">'+file.name+'</div>';
+    }
+
+    // Filename overlay
+    const label=document.createElement('div');
+    label.style.cssText='position:absolute;bottom:4px;left:4px;font-size:9px;color:rgba(255,255,255,0.5);background:rgba(0,0,0,0.5);padding:1px 4px;border-radius:2px';
+    label.textContent=file.name.length>20?file.name.substring(0,17)+'...':file.name;
+    thumb.appendChild(label);
+
+    // File size
+    const size=document.createElement('div');
+    size.style.cssText='position:absolute;top:4px;right:4px;font-size:9px;color:rgba(255,255,255,0.4);background:rgba(0,0,0,0.5);padding:1px 4px;border-radius:2px';
+    size.textContent=formatFileSize(file.size);
+    thumb.appendChild(size);
+
+    // Double-click to edit
+    thumb.ondblclick=()=>{
+      currentEditFile=file;
+      loadPhotoForEdit(file);
+      setView('edit');
+    };
+
+    // Click to select
+    thumb.onclick=(e)=>{
+      if(e.detail===1){
+        thumb.style.border=thumb.style.border?'':'2px solid var(--accent)';
+      }
+    };
+
     grid.appendChild(thumb);
-  }
+  });
+
+  // Stats bar
+  const stats=document.createElement('div');
+  stats.style.cssText='padding:8px 16px;border-bottom:1px solid var(--border);font-size:11px;color:var(--muted);display:flex;gap:16px';
+  stats.innerHTML='<span>'+files.length+' photos imported</span><span>'+formatFileSize(files.reduce((s,f)=>s+f.size,0))+' total</span><span>'+getFormatSummary(files)+'</span>';
+
   const vc=document.getElementById('vaultContent');
   vc.innerHTML='';
+  vc.appendChild(stats);
   vc.appendChild(grid);
 }
 
-// Sliders
-function updateSlider(name,val){
-  const el=document.getElementById('val-'+name);
-  if(el){el.textContent=val;el.className=val!=0?'slider-val changed':'slider-val'}
+// Edit with real photo
+let currentEditFile=null;
+function loadPhotoForEdit(file){
+  const preview=document.getElementById('editPreview');
+  if(file.type.startsWith('image/')){
+    const url=URL.createObjectURL(file);
+    preview.innerHTML='<img src="'+url+'" style="max-width:100%;max-height:100%;border-radius:4px;object-fit:contain">';
+  } else {
+    preview.innerHTML='<div style="text-align:center;color:var(--muted2)"><div style="font-size:14px">'+file.name+'</div><div style="font-size:11px;margin-top:4px">RAW preview requires desktop app</div></div>';
+  }
 }
+
+function formatFileSize(bytes){
+  if(bytes<1024)return bytes+'B';
+  if(bytes<1048576)return(bytes/1024).toFixed(1)+'KB';
+  return(bytes/1048576).toFixed(1)+'MB';
+}
+
+function getFormatSummary(files){
+  const exts={};
+  files.forEach(f=>{const ext=f.name.split('.').pop().toUpperCase();exts[ext]=(exts[ext]||0)+1});
+  return Object.entries(exts).map(([k,v])=>v+' '+k).join(', ');
+}
+
+// Edit sliders — apply real CSS filters to the photo preview
+const editState={exposure:0,highlights:0,shadows:0,whites:0,blacks:0,contrast:0,clarity:0,vibrance:0,saturation:0,temperature:5500,tint:0,sharpening:0,noise:0,grain:0,grainSize:0,grainRough:0};
+
 document.querySelectorAll('.edit-panel input[type=range]').forEach(s=>{
   s.addEventListener('input',function(){
     const valEl=this.parentElement.querySelector('.slider-val');
-    if(valEl){valEl.textContent=this.value;valEl.className=this.value!=0&&this.value!=5500?'slider-val changed':'slider-val'}
+    const name=this.parentElement.querySelector('.slider-name')?.textContent?.toLowerCase()||'';
+    const v=parseFloat(this.value);
+    if(valEl){
+      const display=name.includes('temp')?v+'K':v;
+      valEl.textContent=display;
+      const isDefault=(name.includes('temp')&&v==5500)||(!name.includes('temp')&&v==0);
+      valEl.className=isDefault?'slider-val':'slider-val changed';
+    }
+    // Map slider to edit state
+    if(name.includes('expos'))editState.exposure=v/10;
+    if(name.includes('high'))editState.highlights=v;
+    if(name.includes('shadow'))editState.shadows=v;
+    if(name.includes('white'))editState.whites=v;
+    if(name.includes('black'))editState.blacks=v;
+    if(name.includes('contrast'))editState.contrast=v;
+    if(name.includes('clar'))editState.clarity=v;
+    if(name.includes('vibra'))editState.vibrance=v;
+    if(name.includes('satu'))editState.saturation=v;
+    if(name.includes('temp'))editState.temperature=v;
+    if(name.includes('tint'))editState.tint=v;
+    if(name.includes('sharp'))editState.sharpening=v;
+    if(name.includes('noise'))editState.noise=v;
+    if(name.includes('amount'))editState.grain=v;
+    applyEditsToPreview();
   });
 });
+
+function applyEditsToPreview(){
+  const img=document.querySelector('#editPreview img');
+  if(!img)return;
+
+  // Map edit state to CSS filters
+  const brightness=1+editState.exposure*0.2;
+  const contrast=1+editState.contrast/100;
+  const saturate=1+(editState.saturation+editState.vibrance*0.5)/100;
+  const hueRotate=editState.tint*0.5;
+  // Temperature → sepia + hue (warm=sepia, cool=hue shift)
+  const tempOffset=(editState.temperature-5500)/10000;
+  const sepia=Math.max(0,tempOffset*0.3);
+  const coolShift=Math.min(0,tempOffset)*50;
+
+  img.style.filter=[
+    'brightness('+brightness.toFixed(2)+')',
+    'contrast('+contrast.toFixed(2)+')',
+    'saturate('+saturate.toFixed(2)+')',
+    'sepia('+sepia.toFixed(2)+')',
+    'hue-rotate('+(hueRotate+coolShift).toFixed(1)+'deg)',
+  ].join(' ');
+}
+
+// Drag and drop — real files
+const iz=document.getElementById('importZone');
+if(iz){
+  iz.addEventListener('dragover',e=>{e.preventDefault();e.stopPropagation();iz.classList.add('dragover')});
+  iz.addEventListener('dragleave',e=>{e.preventDefault();iz.classList.remove('dragover')});
+  iz.addEventListener('drop',e=>{
+    e.preventDefault();e.stopPropagation();iz.classList.remove('dragover');
+    const files=Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('image/')||/\.(cr2|cr3|nef|arw|dng|raf|orf|rw2|pef)$/i.test(f.name));
+    if(files.length>0)importPhotos(files);
+  });
+}
 
 // StyleForge
 function selectEffect(el,name){
