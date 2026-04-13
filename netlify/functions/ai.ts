@@ -83,7 +83,7 @@ User: "${data.message}"`;
         break;
 
       case 'backdrop-suggest':
-        prompt = `Look at this photo's subject. Suggest 5 creative background ideas that would look amazing. Include: 1 studio backdrop, 1 nature scene, 1 urban scene, 1 artistic/abstract, 1 seasonal/themed. Respond in ${lang} as JSON array of strings. Be specific and vivid.`;
+        prompt = `Look at this person. Suggest 6 exotic real-world background scenes where they would look amazing. Include famous landmarks, luxury locations, and beautiful nature. Examples: "Eiffel Tower Paris sunset", "Santorini Greece blue domes", "Dubai skyline night". Respond ONLY as a JSON array of exactly 6 short strings (max 8 words each). No explanation, just the JSON array. Respond in ${lang}.`;
         useVision = !!imageBase64;
         break;
 

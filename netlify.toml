@@ -37,6 +37,12 @@
   to = "/.netlify/functions/styleforge"
   status = 200
 
+# Backdrop AI generation
+[[redirects]]
+  from = "/backdrop"
+  to = "/.netlify/functions/backdrop"
+  status = 200
+
 # Notifications/analytics
 [[redirects]]
   from = "/notify"

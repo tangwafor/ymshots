@@ -2081,9 +2081,23 @@ function loadBackdropPhoto(){
       bgOriginal=ctx.getImageData(0,0,c.width,c.height);
       c.style.display='block';document.getElementById('bgPlaceholder').style.display='none';
       applyBackdrop();
+      // Get AI scene suggestions and show as clickable buttons
       getImageBase64(bgFile,300).then(b64=>callAIWithImage('backdrop-suggest',{},b64).then(r=>{
-        document.getElementById('bgAiResult').style.display='block';
-        document.getElementById('bgAiResult').textContent='YM suggestions: '+r;
+        try{
+          const scenes=JSON.parse(r);
+          if(Array.isArray(scenes)){
+            const container=document.getElementById('bgAiResult');
+            container.style.display='block';
+            container.innerHTML='<div style="font-size:10px;color:var(--muted2);margin-bottom:6px">'+(currentLang==='fr'?'SCÈNES YM':'YM SCENES')+'</div>';
+            scenes.forEach(scene=>{
+              const btn=document.createElement('button');
+              btn.textContent=scene;
+              btn.style.cssText='display:block;width:100%;padding:8px 10px;margin-bottom:4px;border-radius:4px;border:1px solid #333;background:var(--surface);color:var(--accent);font-size:11px;cursor:pointer;text-align:left';
+              btn.onclick=()=>generateAIBackdrop(scene);
+              container.appendChild(btn);
+            });
+          }
+        }catch{/* AI didn't return valid JSON — skip suggestions */}
       }));
     };img.src=URL.createObjectURL(bgFile);
   };input.click();
@@ -2127,6 +2141,52 @@ function applyBackdrop(){
     }
   }
   ctx.putImageData(new ImageData(out,w,h),0,0);
+}
+function generateAIBackdrop(scene){
+  if(!bgOriginal)return;
+  const c=document.getElementById('bgCanvas'),ctx=c.getContext('2d');
+  // Show loading
+  ctx.fillStyle='#0A0A0A';ctx.fillRect(0,0,c.width,c.height);
+  ctx.fillStyle='#E0943A';ctx.font='14px sans-serif';ctx.textAlign='center';
+  ctx.fillText(currentLang==='fr'?'YM génère la scène...':'YM generating scene...',c.width/2,c.height/2-10);
+  ctx.fillStyle='rgba(255,255,255,0.3)';ctx.font='11px sans-serif';
+  ctx.fillText(scene,c.width/2,c.height/2+15);
+
+  fetch('/backdrop',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({prompt:scene,width:c.width,height:c.height})
+  }).then(r=>r.json()).then(data=>{
+    if(data.image){
+      const bgImg=new Image();
+      bgImg.onload=()=>{
+        // Draw generated background
+        ctx.drawImage(bgImg,0,0,c.width,c.height);
+        // Composite person on top (using center-weighted mask from original)
+        const src=bgOriginal.data;
+        const bgData=ctx.getImageData(0,0,c.width,c.height);
+        const out=bgData.data;
+        const w=c.width,h=c.height,cx=w/2,cy=h/2,maxDist=Math.sqrt(cx*cx+cy*cy);
+        for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+          const i=(y*w+x)*4;
+          const dist=Math.sqrt((x-cx)**2+(y-cy)**2)/maxDist;
+          const lum=0.299*src[i]+0.587*src[i+1]+0.114*src[i+2];
+          const isFg=dist<0.35||(lum>30&&lum<245&&dist<0.55);
+          if(isFg){out[i]=src[i];out[i+1]=src[i+1];out[i+2]=src[i+2];}
+        }
+        ctx.putImageData(bgData,0,0);
+      };
+      bgImg.src='data:image/jpeg;base64,'+data.image;
+    } else {
+      // Fallback — show error
+      ctx.fillStyle='#0A0A0A';ctx.fillRect(0,0,c.width,c.height);
+      ctx.fillStyle='#e74c3c';ctx.font='13px sans-serif';ctx.textAlign='center';
+      ctx.fillText(data.error||'Generation failed',c.width/2,c.height/2);
+    }
+  }).catch(err=>{
+    ctx.fillStyle='#0A0A0A';ctx.fillRect(0,0,c.width,c.height);
+    ctx.fillStyle='#e74c3c';ctx.font='13px sans-serif';ctx.textAlign='center';
+    ctx.fillText('Connection error',c.width/2,c.height/2);
+  });
 }
 function downloadBackdrop(){const a=document.createElement('a');a.download='ymshots-backdrop-'+Date.now()+'.jpg';a.href=document.getElementById('bgCanvas').toDataURL('image/jpeg',0.92);a.click();}
 
