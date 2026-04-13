@@ -1578,12 +1578,17 @@ function loadFamilyPhoto(role){
   input.onchange=()=>{
     const file=input.files[0];if(!file)return;
     familyPhotos[role]=file;
+    const canvasId='family'+role.charAt(0).toUpperCase()+role.slice(1);
+    const canvas=document.getElementById(canvasId);
     const img=new Image();
     img.onload=()=>{
-      const canvas=document.getElementById('family'+role.charAt(0).toUpperCase()+role.slice(1));
-      canvas.width=200;canvas.height=200*(img.height/img.width);
+      canvas.width=200;canvas.height=Math.round(200*(img.height/img.width));
       canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
       canvas.style.display='block';
+      // Update label to show filename + "tap to change"
+      const labels={parent1:'parent1Label',parent2:'parent2Label',child:'childLabel'};
+      const labelEl=document.getElementById(labels[role]);
+      if(labelEl)labelEl.innerHTML=file.name.substring(0,15)+'<br><span style="color:var(--accent);font-size:9px">'+(currentLang==='fr'?'Cliquer pour changer':'Click to change')+'</span>';
     };
     img.src=URL.createObjectURL(file);
   };
@@ -1591,16 +1596,49 @@ function loadFamilyPhoto(role){
 }
 
 function analyzeFamilyResemblance(){
-  const loaded=Object.values(familyPhotos).filter(f=>f);
+  const loaded=Object.entries(familyPhotos).filter(([k,v])=>v);
   if(loaded.length<2){alert(currentLang==='fr'?'Chargez au moins 2 photos.':'Upload at least 2 photos.');return;}
 
   const resultDiv=document.getElementById('familyResult');
   resultDiv.style.display='block';
-  resultDiv.innerHTML='<div style="text-align:center;color:var(--accent);padding:16px">Analyzing resemblances...</div>';
+  resultDiv.innerHTML='<div style="text-align:center;color:var(--accent);padding:16px">'+(currentLang==='fr'?'Analyse des ressemblances en cours...':'Analyzing resemblances...')+'</div>';
 
-  callAI('family-resemblance',{
-    members:Object.entries(familyPhotos).filter(([k,v])=>v).map(([k,v])=>({role:k,fileName:v.name}))
-  }).then(r=>{
+  // Combine all family photos into one composite image for Claude to see
+  const compositeCanvas=document.createElement('canvas');
+  const photoWidth=200;
+  compositeCanvas.width=photoWidth*loaded.length;
+  compositeCanvas.height=250;
+  const cCtx=compositeCanvas.getContext('2d');
+  cCtx.fillStyle='#0A0A0A';
+  cCtx.fillRect(0,0,compositeCanvas.width,compositeCanvas.height);
+
+  let loadCount=0;
+  loaded.forEach(([role,file],idx)=>{
+    const img=new Image();
+    img.onload=()=>{
+      const scale=Math.min(photoWidth/img.width,200/img.height);
+      const w=img.width*scale,h=img.height*scale;
+      cCtx.drawImage(img,idx*photoWidth+(photoWidth-w)/2,(200-h)/2,w,h);
+      // Label
+      cCtx.fillStyle='#E0943A';
+      cCtx.font='bold 14px sans-serif';
+      cCtx.textAlign='center';
+      const labels={parent1:'Parent 1',parent2:'Parent 2',child:'Child'};
+      cCtx.fillText(labels[role]||role,idx*photoWidth+photoWidth/2,230);
+
+      loadCount++;
+      if(loadCount===loaded.length){
+        // All loaded — send composite to Claude
+        const b64=compositeCanvas.toDataURL('image/jpeg',0.75).split(',')[1];
+        callAIWithImage('family-resemblance',{
+          members:loaded.map(([k])=>k)
+        },b64).then(processResult);
+      }
+    };
+    img.src=URL.createObjectURL(file);
+  });
+
+  function processResult(r){
     try{
       const data=JSON.parse(r);
       let html='<div style="padding:16px;border-radius:8px;background:var(--surface);border:1px solid var(--border)">';
@@ -1623,8 +1661,8 @@ function analyzeFamilyResemblance(){
       if(data.funFact)html+='<div style="margin-top:12px;padding:8px 12px;border-radius:6px;background:rgba(224,148,58,0.08);font-size:12px;color:var(--muted)">'+data.funFact+'</div>';
       html+='</div>';
       resultDiv.innerHTML=html;
-    }catch{resultDiv.innerHTML='<div style="padding:16px;border-radius:8px;background:var(--surface);border:1px solid var(--border);color:var(--muted);font-size:12px">'+r+'</div>';}
-  });
+    }catch{resultDiv.innerHTML='<div style="padding:16px;border-radius:8px;background:var(--surface);border:1px solid var(--border);color:var(--muted);font-size:12px;line-height:1.6">'+r+'</div>';}
+  }
 }
 
 // ═══ TIMELAPSE — Portrait age progression ═══
