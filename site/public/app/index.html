@@ -181,6 +181,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;heigh
       <button class="sb-item" onclick="setView('familytree')"><span class="sb-icon">&#128106;</span><span>FamilyTree</span></button>
       <button class="sb-item" onclick="setView('timelapse')"><span class="sb-icon">&#127916;</span><span>TimeLapse</span></button>
       <button class="sb-item" onclick="setView('petportrait')"><span class="sb-icon">&#128054;</span><span>Pet Portrait</span></button>
+      <div class="sb-section" id="sec-pro">PRO TOOLS</div>
+      <button class="sb-item" onclick="setView('photorevive')"><span class="sb-icon">&#128260;</span><span>PhotoRevive</span></button>
+      <button class="sb-item" onclick="setView('collage')"><span class="sb-icon">&#128444;</span><span>Collage</span></button>
+      <button class="sb-item" onclick="setView('backdrop')"><span class="sb-icon">&#127749;</span><span>BackdropAI</span></button>
+      <button class="sb-item" onclick="setView('protools')"><span class="sb-icon">&#128295;</span><span>ProTools</span></button>
       <div class="sb-section" id="sec-business">BUSINESS</div>
       <button class="sb-item" onclick="setView('gallery')"><span class="sb-icon">&#9633;</span><span>Galleries</span></button>
       <button class="sb-item" onclick="setView('invoices')"><span class="sb-icon">&#8364;</span><span>Invoices</span></button>
@@ -491,6 +496,123 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;heigh
               <button onclick="downloadPetPhoto()" style="padding:10px 20px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:600;cursor:pointer">Save</button>
             </div>
             <div id="petAiResult" style="padding:8px 16px;display:none;font-size:11px;color:var(--accent);border-top:1px solid var(--border)"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHOTOREVIVE — Old photo restoration -->
+      <div class="view" id="view-photorevive">
+        <div style="display:flex;height:100%">
+          <div style="width:260px;border-right:1px solid var(--border);padding:12px;overflow-y:auto">
+            <div style="font-size:16px;font-weight:700;margin-bottom:4px">&#128260; PhotoRevive</div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:16px">Restore old, damaged, faded photos</div>
+            <button onclick="loadRevivePhoto()" class="import-btn" style="width:100%;margin-bottom:12px">Select old photo</button>
+            <div style="font-size:10px;color:var(--muted2);margin-bottom:12px">RESTORATION TOOLS</div>
+            <div class="slider-row"><div class="slider-label"><span class="slider-name">Fade restore</span><span class="slider-val" id="rvFadeVal">0</span></div><input type="range" id="rvFade" min="0" max="100" value="0" oninput="document.getElementById('rvFadeVal').textContent=this.value;applyRevive()"></div>
+            <div class="slider-row"><div class="slider-label"><span class="slider-name">Scratch fix</span><span class="slider-val" id="rvScratchVal">0</span></div><input type="range" id="rvScratch" min="0" max="100" value="0" oninput="document.getElementById('rvScratchVal').textContent=this.value;applyRevive()"></div>
+            <div class="slider-row"><div class="slider-label"><span class="slider-name">Mold remove</span><span class="slider-val" id="rvMoldVal">0</span></div><input type="range" id="rvMold" min="0" max="100" value="0" oninput="document.getElementById('rvMoldVal').textContent=this.value;applyRevive()"></div>
+            <div class="slider-row"><div class="slider-label"><span class="slider-name">Sharpen face</span><span class="slider-val" id="rvSharpVal">0</span></div><input type="range" id="rvSharp" min="0" max="100" value="0" oninput="document.getElementById('rvSharpVal').textContent=this.value;applyRevive()"></div>
+            <div class="slider-row"><div class="slider-label"><span class="slider-name">Color boost</span><span class="slider-val" id="rvColorVal">0</span></div><input type="range" id="rvColor" min="0" max="100" value="0" oninput="document.getElementById('rvColorVal').textContent=this.value;applyRevive()"></div>
+            <div class="slider-row"><div class="slider-label"><span class="slider-name">Warmth fix</span><span class="slider-val" id="rvWarmVal">0</span></div><input type="range" id="rvWarm" min="-50" max="50" value="0" oninput="document.getElementById('rvWarmVal').textContent=this.value;applyRevive()"></div>
+            <button onclick="autoRevive()" style="width:100%;padding:10px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:600;cursor:pointer;margin:12px 0">Auto restore</button>
+            <button onclick="downloadRevive()" style="width:100%;padding:8px;border-radius:5px;border:1px solid #333;background:transparent;color:var(--muted);font-size:11px;cursor:pointer">Save restored photo</button>
+            <div id="rvAiResult" style="margin-top:12px;font-size:11px;color:var(--accent);display:none"></div>
+          </div>
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;background:#080808">
+            <canvas id="rvCanvas" style="max-width:90%;max-height:90%;border-radius:4px;display:none"></canvas>
+            <div id="rvPlaceholder" style="text-align:center;color:var(--muted2)"><div style="font-size:48px;margin-bottom:16px">&#128260;</div><div style="font-size:14px">Select an old or damaged photo to restore</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLLAGE STUDIO -->
+      <div class="view" id="view-collage">
+        <div style="display:flex;height:100%">
+          <div style="width:260px;border-right:1px solid var(--border);padding:12px;overflow-y:auto">
+            <div style="font-size:16px;font-weight:700;margin-bottom:4px">&#128444; Collage Studio</div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:16px">Create beautiful photo collages</div>
+            <div style="font-size:10px;color:var(--muted2);margin-bottom:8px">LAYOUT</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:16px" id="collageLayouts">
+              <button onclick="setCollageLayout(2,1)" style="padding:12px 0;border-radius:4px;border:1px solid #333;background:var(--surface);color:var(--muted);font-size:10px;cursor:pointer">2 &#9638;&#9638;</button>
+              <button onclick="setCollageLayout(2,2)" style="padding:12px 0;border-radius:4px;border:1px solid #333;background:var(--surface);color:var(--muted);font-size:10px;cursor:pointer">4 &#9638;&#9638;<br>&#9638;&#9638;</button>
+              <button onclick="setCollageLayout(3,3)" style="padding:12px 0;border-radius:4px;border:1px solid #333;background:var(--surface);color:var(--muted);font-size:10px;cursor:pointer">9 Grid</button>
+              <button onclick="setCollageLayout(3,2)" style="padding:12px 0;border-radius:4px;border:1px solid #333;background:var(--surface);color:var(--muted);font-size:10px;cursor:pointer">3x2</button>
+              <button onclick="setCollageLayout(1,3)" style="padding:12px 0;border-radius:4px;border:1px solid #333;background:var(--surface);color:var(--muted);font-size:10px;cursor:pointer">1x3 Strip</button>
+              <button onclick="setCollageLayout(2,3)" style="padding:12px 0;border-radius:4px;border:1px solid #333;background:var(--surface);color:var(--muted);font-size:10px;cursor:pointer">2x3</button>
+            </div>
+            <div style="font-size:10px;color:var(--muted2);margin-bottom:8px">STYLE</div>
+            <div class="slider-row"><div class="slider-label"><span class="slider-name">Gap</span><span class="slider-val" id="colGapVal">10</span></div><input type="range" id="colGap" min="0" max="40" value="10" oninput="document.getElementById('colGapVal').textContent=this.value;renderCollage()"></div>
+            <div class="slider-row"><div class="slider-label"><span class="slider-name">Rounded</span><span class="slider-val" id="colRoundVal">0</span></div><input type="range" id="colRound" min="0" max="30" value="0" oninput="document.getElementById('colRoundVal').textContent=this.value;renderCollage()"></div>
+            <div style="font-size:10px;color:var(--muted2);margin:12px 0 8px">BACKGROUND</div>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px">
+              <button onclick="colBg='#0A0A0A';renderCollage()" style="width:28px;height:28px;border-radius:4px;border:1px solid #333;background:#0A0A0A;cursor:pointer"></button>
+              <button onclick="colBg='#ffffff';renderCollage()" style="width:28px;height:28px;border-radius:4px;border:1px solid #333;background:#ffffff;cursor:pointer"></button>
+              <button onclick="colBg='#E0943A';renderCollage()" style="width:28px;height:28px;border-radius:4px;border:1px solid #333;background:#E0943A;cursor:pointer"></button>
+              <button onclick="colBg='#2c3e50';renderCollage()" style="width:28px;height:28px;border-radius:4px;border:1px solid #333;background:#2c3e50;cursor:pointer"></button>
+              <button onclick="colBg='#c0392b';renderCollage()" style="width:28px;height:28px;border-radius:4px;border:1px solid #333;background:#c0392b;cursor:pointer"></button>
+              <button onclick="colBg='#8e44ad';renderCollage()" style="width:28px;height:28px;border-radius:4px;border:1px solid #333;background:#8e44ad;cursor:pointer"></button>
+            </div>
+            <button onclick="addCollagePhotos()" class="import-btn" style="width:100%;margin-bottom:8px">+ Add photos</button>
+            <button onclick="downloadCollage()" style="width:100%;padding:8px;border-radius:5px;border:1px solid #333;background:transparent;color:var(--muted);font-size:11px;cursor:pointer">Save collage</button>
+          </div>
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;background:#080808">
+            <canvas id="colCanvas" width="800" height="800" style="max-width:90%;max-height:90%;border-radius:4px"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- BACKDROP AI -->
+      <div class="view" id="view-backdrop">
+        <div style="display:flex;height:100%">
+          <div style="width:260px;border-right:1px solid var(--border);padding:12px;overflow-y:auto">
+            <div style="font-size:16px;font-weight:700;margin-bottom:4px">&#127749; BackdropAI</div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:16px">Remove & replace backgrounds</div>
+            <button onclick="loadBackdropPhoto()" class="import-btn" style="width:100%;margin-bottom:12px">Select photo</button>
+            <div style="font-size:10px;color:var(--muted2);margin-bottom:8px">BACKGROUND TYPE</div>
+            <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px" id="bgOptions">
+              <button onclick="setBgType('blur')" class="tb-btn" style="text-align:left">Blur original</button>
+              <button onclick="setBgType('white')" class="tb-btn" style="text-align:left">Studio white</button>
+              <button onclick="setBgType('gray')" class="tb-btn" style="text-align:left">Studio gray</button>
+              <button onclick="setBgType('black')" class="tb-btn" style="text-align:left">Pure black</button>
+              <button onclick="setBgType('gradient')" class="tb-btn" style="text-align:left">Warm gradient</button>
+              <button onclick="setBgType('bokeh')" class="tb-btn" style="text-align:left">Bokeh lights</button>
+              <button onclick="setBgType('sunset')" class="tb-btn" style="text-align:left">Sunset sky</button>
+              <button onclick="setBgType('custom')" class="tb-btn" style="text-align:left;color:var(--accent)">Custom color...</button>
+            </div>
+            <div class="slider-row"><div class="slider-label"><span class="slider-name">Threshold</span><span class="slider-val" id="bgThreshVal">128</span></div><input type="range" id="bgThresh" min="50" max="220" value="128" oninput="document.getElementById('bgThreshVal').textContent=this.value;applyBackdrop()"></div>
+            <div class="slider-row"><div class="slider-label"><span class="slider-name">Edge smooth</span><span class="slider-val" id="bgEdgeVal">3</span></div><input type="range" id="bgEdge" min="0" max="10" value="3" oninput="document.getElementById('bgEdgeVal').textContent=this.value;applyBackdrop()"></div>
+            <button onclick="downloadBackdrop()" style="width:100%;padding:8px;border-radius:5px;border:1px solid #333;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;margin-top:8px">Save photo</button>
+            <div id="bgAiResult" style="margin-top:12px;font-size:11px;color:var(--accent);display:none"></div>
+          </div>
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;background:#080808">
+            <canvas id="bgCanvas" style="max-width:90%;max-height:90%;border-radius:4px;display:none"></canvas>
+            <div id="bgPlaceholder" style="text-align:center;color:var(--muted2)"><div style="font-size:48px;margin-bottom:16px">&#127749;</div><div style="font-size:14px">Select a photo to change its background</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRO TOOLS -->
+      <div class="view" id="view-protools">
+        <div style="display:flex;height:100%">
+          <div style="width:260px;border-right:1px solid var(--border);padding:12px;overflow-y:auto">
+            <div style="font-size:16px;font-weight:700;margin-bottom:4px">&#128295; ProTools</div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:16px">Advanced photo enhancements</div>
+            <button onclick="loadProPhoto()" class="import-btn" style="width:100%;margin-bottom:12px">Select photo</button>
+            <div style="font-size:10px;color:var(--muted2);margin-bottom:8px">EFFECTS</div>
+            <div class="slider-row"><div class="slider-label"><span class="slider-name">Vignette</span><span class="slider-val" id="ptVigVal">0</span></div><input type="range" id="ptVig" min="0" max="100" value="0" oninput="document.getElementById('ptVigVal').textContent=this.value;applyProTools()"></div>
+            <div class="slider-row"><div class="slider-label"><span class="slider-name">Tilt-shift</span><span class="slider-val" id="ptTiltVal">0</span></div><input type="range" id="ptTilt" min="0" max="100" value="0" oninput="document.getElementById('ptTiltVal').textContent=this.value;applyProTools()"></div>
+            <div class="slider-row"><div class="slider-label"><span class="slider-name">Red-eye fix</span><span class="slider-val" id="ptRedVal">0</span></div><input type="range" id="ptRed" min="0" max="100" value="0" oninput="document.getElementById('ptRedVal').textContent=this.value;applyProTools()"></div>
+            <div class="slider-row"><div class="slider-label"><span class="slider-name">Teeth whiten</span><span class="slider-val" id="ptTeethVal">0</span></div><input type="range" id="ptTeeth" min="0" max="100" value="0" oninput="document.getElementById('ptTeethVal').textContent=this.value;applyProTools()"></div>
+            <div class="slider-row"><div class="slider-label"><span class="slider-name">Lens fix</span><span class="slider-val" id="ptLensVal">0</span></div><input type="range" id="ptLens" min="-50" max="50" value="0" oninput="document.getElementById('ptLensVal').textContent=this.value;applyProTools()"></div>
+            <div style="font-size:10px;color:var(--muted2);margin:12px 0 8px">CREATIVE</div>
+            <div class="slider-row"><div class="slider-label"><span class="slider-name">Color splash</span><span class="slider-val" id="ptSplashVal">0</span></div><input type="range" id="ptSplash" min="0" max="360" value="0" oninput="document.getElementById('ptSplashVal').textContent=this.value+'°';applyProTools()"></div>
+            <div class="slider-row"><div class="slider-label"><span class="slider-name">Double exposure</span><span class="slider-val" id="ptDblVal">0</span></div><input type="range" id="ptDbl" min="0" max="100" value="0" oninput="document.getElementById('ptDblVal').textContent=this.value;applyProTools()"></div>
+            <button onclick="loadDoubleExposure()" class="tb-btn" style="width:100%;margin-bottom:8px">Load 2nd image for blend</button>
+            <button onclick="downloadPro()" style="width:100%;padding:8px;border-radius:5px;border:1px solid #333;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;margin-top:8px">Save photo</button>
+          </div>
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;background:#080808">
+            <canvas id="ptCanvas" style="max-width:90%;max-height:90%;border-radius:4px;display:none"></canvas>
+            <div id="ptPlaceholder" style="text-align:center;color:var(--muted2)"><div style="font-size:48px;margin-bottom:16px">&#128295;</div><div style="font-size:14px">Select a photo for pro enhancements</div></div>
           </div>
         </div>
       </div>
@@ -1783,8 +1905,304 @@ function downloadPetPhoto(){
   a.href=canvas.toDataURL('image/jpeg',0.92);a.click();
 }
 
+// ═══ PHOTOREVIVE — Old photo restoration ═══
+function loadRevivePhoto(){
+  const input=document.createElement('input');input.type='file';input.accept='image/*';
+  input.onchange=()=>{
+    const file=input.files[0];if(!file)return;
+    const img=new Image();img.onload=()=>{
+      const c=document.getElementById('rvCanvas'),ctx=c.getContext('2d',{willReadFrequently:true});
+      const s=Math.min(1,900/Math.max(img.width,img.height));
+      c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);
+      ctx.drawImage(img,0,0,c.width,c.height);
+      c._orig=ctx.getImageData(0,0,c.width,c.height);
+      c.style.display='block';document.getElementById('rvPlaceholder').style.display='none';
+      getImageBase64(file,400).then(b64=>callAIWithImage('photo-revive',{},b64).then(r=>{
+        document.getElementById('rvAiResult').style.display='block';
+        document.getElementById('rvAiResult').textContent='YM: '+r;
+      }));
+    };img.src=URL.createObjectURL(file);
+  };input.click();
+}
+function applyRevive(){
+  const c=document.getElementById('rvCanvas');if(!c._orig)return;
+  const ctx=c.getContext('2d'),src=c._orig.data,out=new Uint8ClampedArray(src.length);
+  const fade=document.getElementById('rvFade').value/100;
+  const scratch=document.getElementById('rvScratch').value/100;
+  const mold=document.getElementById('rvMold').value/100;
+  const sharp=document.getElementById('rvSharp').value/100;
+  const color=document.getElementById('rvColor').value/100;
+  const warm=document.getElementById('rvWarm').value/50;
+  const w=c.width,h=c.height;
+
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const i=(y*w+x)*4;
+    let r=src[i],g=src[i+1],b=src[i+2];
+    // Fade restore: stretch histogram (auto-levels)
+    if(fade>0){const min=30*fade,range=255-60*fade;r=(r-min)/range*255*fade+r*(1-fade);g=(g-min)/range*255*fade+g*(1-fade);b=(b-min)/range*255*fade+b*(1-fade);}
+    // Scratch fix: median-like smooth on bright outlier pixels
+    if(scratch>0&&x>1&&x<w-1&&y>1&&y<h-1){
+      const lum=0.299*r+0.587*g+0.114*b;
+      const nLum=0.299*src[((y-1)*w+x)*4]+0.587*src[((y-1)*w+x)*4+1]+0.114*src[((y-1)*w+x)*4+2];
+      if(Math.abs(lum-nLum)>50*scratch){
+        const ni=((y-1)*w+x)*4,si=((y+1)*w+x)*4,wi=(y*w+x-1)*4,ei=(y*w+x+1)*4;
+        r=(src[ni]+src[si]+src[wi]+src[ei])/4;g=(src[ni+1]+src[si+1]+src[wi+1]+src[ei+1])/4;b=(src[ni+2]+src[si+2]+src[wi+2]+src[ei+2])/4;
+      }
+    }
+    // Mold remove: detect brownish/greenish spots and replace
+    if(mold>0){
+      const isMold=(r>80&&r<200&&g>60&&g<180&&b<100&&(r-b)>30);
+      if(isMold){const ni=((Math.max(0,y-2))*w+x)*4;r=src[ni]*mold+r*(1-mold);g=src[ni+1]*mold+g*(1-mold);b=src[ni+2]*mold+b*(1-mold);}
+    }
+    // Sharpen
+    if(sharp>0&&x>0&&x<w-1&&y>0&&y<h-1){
+      const c1=src[i],n=src[((y-1)*w+x)*4],s2=src[((y+1)*w+x)*4],ww=src[(y*w+x-1)*4],e=src[(y*w+x+1)*4];
+      const unsharp=5*c1-n-s2-ww-e;r=r*(1-sharp)+Math.max(0,Math.min(255,unsharp))*sharp;
+      const c2=src[i+1],n2=src[((y-1)*w+x)*4+1],s3=src[((y+1)*w+x)*4+1],w2=src[(y*w+x-1)*4+1],e2=src[(y*w+x+1)*4+1];
+      g=g*(1-sharp)+Math.max(0,Math.min(255,5*c2-n2-s3-w2-e2))*sharp;
+    }
+    // Color boost
+    if(color>0){const lum=0.299*r+0.587*g+0.114*b;const cf=1+color*0.8;r=lum+(r-lum)*cf;g=lum+(g-lum)*cf;b=lum+(b-lum)*cf;}
+    // Warmth fix
+    if(warm!==0){r=r*(1+warm*0.15);b=b*(1-warm*0.15);}
+    out[i]=Math.max(0,Math.min(255,r));out[i+1]=Math.max(0,Math.min(255,g));out[i+2]=Math.max(0,Math.min(255,b));out[i+3]=src[i+3];
+  }
+  ctx.putImageData(new ImageData(out,w,h),0,0);
+}
+function autoRevive(){
+  document.getElementById('rvFade').value=70;document.getElementById('rvFadeVal').textContent='70';
+  document.getElementById('rvScratch').value=50;document.getElementById('rvScratchVal').textContent='50';
+  document.getElementById('rvMold').value=40;document.getElementById('rvMoldVal').textContent='40';
+  document.getElementById('rvSharp').value=30;document.getElementById('rvSharpVal').textContent='30';
+  document.getElementById('rvColor').value=50;document.getElementById('rvColorVal').textContent='50';
+  document.getElementById('rvWarm').value=10;document.getElementById('rvWarmVal').textContent='10';
+  applyRevive();
+}
+function downloadRevive(){const c=document.getElementById('rvCanvas');const a=document.createElement('a');a.download='ymshots-restored-'+Date.now()+'.jpg';a.href=c.toDataURL('image/jpeg',0.92);a.click();}
+
+// ═══ COLLAGE STUDIO ═══
+let colPhotos=[];let colCols=2;let colRows=2;let colBg='#0A0A0A';
+function setCollageLayout(cols,rows){colCols=cols;colRows=rows;renderCollage();}
+function addCollagePhotos(){
+  const input=document.createElement('input');input.type='file';input.accept='image/*';input.multiple=true;
+  input.onchange=()=>{
+    Array.from(input.files).forEach(f=>{
+      const img=new Image();img.onload=()=>{colPhotos.push(img);renderCollage();};
+      img.src=URL.createObjectURL(f);
+    });
+  };input.click();
+}
+function renderCollage(){
+  const c=document.getElementById('colCanvas'),ctx=c.getContext('2d');
+  const gap=parseInt(document.getElementById('colGap').value)||10;
+  const round=parseInt(document.getElementById('colRound').value)||0;
+  c.width=800;c.height=800;
+  ctx.fillStyle=colBg;ctx.fillRect(0,0,800,800);
+  const cellW=(800-(colCols+1)*gap)/colCols;
+  const cellH=(800-(colRows+1)*gap)/colRows;
+  for(let row=0;row<colRows;row++)for(let col=0;col<colCols;col++){
+    const idx=row*colCols+col;
+    const x=gap+col*(cellW+gap),y=gap+row*(cellH+gap);
+    if(round>0){ctx.save();roundRect(ctx,x,y,cellW,cellH,round);ctx.clip();}
+    if(colPhotos[idx]){
+      const img=colPhotos[idx];
+      const scale=Math.max(cellW/img.width,cellH/img.height);
+      const dw=img.width*scale,dh=img.height*scale;
+      ctx.drawImage(img,x-(dw-cellW)/2,y-(dh-cellH)/2,dw,dh);
+    } else {
+      ctx.fillStyle='#1a1a1a';ctx.fillRect(x,y,cellW,cellH);
+      ctx.fillStyle='#333';ctx.font='12px sans-serif';ctx.textAlign='center';
+      ctx.fillText('+ Photo '+(idx+1),x+cellW/2,y+cellH/2);
+    }
+    if(round>0)ctx.restore();
+  }
+}
+function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function downloadCollage(){const a=document.createElement('a');a.download='ymshots-collage-'+Date.now()+'.jpg';a.href=document.getElementById('colCanvas').toDataURL('image/jpeg',0.92);a.click();}
+
+// ═══ BACKDROP AI — Background removal + replacement ═══
+let bgType='blur';let bgOriginal=null;let bgFile=null;
+function loadBackdropPhoto(){
+  const input=document.createElement('input');input.type='file';input.accept='image/*';
+  input.onchange=()=>{
+    bgFile=input.files[0];if(!bgFile)return;
+    const img=new Image();img.onload=()=>{
+      const c=document.getElementById('bgCanvas'),ctx=c.getContext('2d',{willReadFrequently:true});
+      const s=Math.min(1,800/Math.max(img.width,img.height));
+      c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);
+      ctx.drawImage(img,0,0,c.width,c.height);
+      bgOriginal=ctx.getImageData(0,0,c.width,c.height);
+      c.style.display='block';document.getElementById('bgPlaceholder').style.display='none';
+      applyBackdrop();
+      getImageBase64(bgFile,300).then(b64=>callAIWithImage('backdrop-suggest',{},b64).then(r=>{
+        document.getElementById('bgAiResult').style.display='block';
+        document.getElementById('bgAiResult').textContent='YM suggestions: '+r;
+      }));
+    };img.src=URL.createObjectURL(bgFile);
+  };input.click();
+}
+function setBgType(t){
+  if(t==='custom'){const col=prompt('Hex color (e.g. #ff6600):');if(col)bgType=col;} else bgType=t;
+  applyBackdrop();
+}
+function applyBackdrop(){
+  if(!bgOriginal)return;
+  const c=document.getElementById('bgCanvas'),ctx=c.getContext('2d');
+  const src=bgOriginal.data,out=new Uint8ClampedArray(src.length);
+  const w=c.width,h=c.height;
+  const thresh=parseInt(document.getElementById('bgThresh').value);
+
+  // Simple background detection: center-weighted luminance threshold
+  const cx=w/2,cy=h/2,maxDist=Math.sqrt(cx*cx+cy*cy);
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const i=(y*w+x)*4;
+    const dist=Math.sqrt((x-cx)**2+(y-cy)**2)/maxDist;
+    const lum=0.299*src[i]+0.587*src[i+1]+0.114*src[i+2];
+    const isFg=dist<0.4||(lum>40&&lum<240&&dist<0.65);
+
+    if(isFg){
+      out[i]=src[i];out[i+1]=src[i+1];out[i+2]=src[i+2];out[i+3]=255;
+    } else {
+      let br=0,bg2=0,bb=0;
+      switch(bgType){
+        case 'blur':br=src[i]*0.7;bg2=src[i+1]*0.7;bb=src[i+2]*0.7;break;
+        case 'white':br=bg2=bb=255;break;
+        case 'gray':br=bg2=bb=180;break;
+        case 'black':br=bg2=bb=0;break;
+        case 'gradient':br=180+y/h*75;bg2=120+y/h*50;bb=80;break;
+        case 'bokeh':br=10+Math.random()*30;bg2=8+Math.random()*20;bb=5+Math.random()*15;
+          if(Math.random()<0.02){br=200+Math.random()*55;bg2=140+Math.random()*60;bb=50+Math.random()*40;}break;
+        case 'sunset':br=Math.min(255,200-y/h*100);bg2=Math.min(255,100+y/h*80);bb=Math.min(255,150-y/h*120);break;
+        default:
+          if(bgType.startsWith('#')){const hex=bgType.slice(1);br=parseInt(hex.substring(0,2),16);bg2=parseInt(hex.substring(2,4),16);bb=parseInt(hex.substring(4,6),16);}
+      }
+      out[i]=br;out[i+1]=bg2;out[i+2]=bb;out[i+3]=255;
+    }
+  }
+  ctx.putImageData(new ImageData(out,w,h),0,0);
+}
+function downloadBackdrop(){const a=document.createElement('a');a.download='ymshots-backdrop-'+Date.now()+'.jpg';a.href=document.getElementById('bgCanvas').toDataURL('image/jpeg',0.92);a.click();}
+
+// ═══ PRO TOOLS ═══
+let ptOriginal=null;let ptDblImg=null;
+function loadProPhoto(){
+  const input=document.createElement('input');input.type='file';input.accept='image/*';
+  input.onchange=()=>{
+    const file=input.files[0];if(!file)return;
+    const img=new Image();img.onload=()=>{
+      const c=document.getElementById('ptCanvas'),ctx=c.getContext('2d',{willReadFrequently:true});
+      const s=Math.min(1,800/Math.max(img.width,img.height));
+      c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);
+      ctx.drawImage(img,0,0,c.width,c.height);
+      ptOriginal=ctx.getImageData(0,0,c.width,c.height);
+      c.style.display='block';document.getElementById('ptPlaceholder').style.display='none';
+    };img.src=URL.createObjectURL(file);
+  };input.click();
+}
+function loadDoubleExposure(){
+  const input=document.createElement('input');input.type='file';input.accept='image/*';
+  input.onchange=()=>{
+    const file=input.files[0];if(!file)return;
+    const img=new Image();img.onload=()=>{ptDblImg=img;applyProTools();};
+    img.src=URL.createObjectURL(file);
+  };input.click();
+}
+function applyProTools(){
+  if(!ptOriginal)return;
+  const c=document.getElementById('ptCanvas'),ctx=c.getContext('2d');
+  const src=ptOriginal.data,out=new Uint8ClampedArray(src.length);
+  const w=c.width,h=c.height;
+  const vig=document.getElementById('ptVig').value/100;
+  const tilt=document.getElementById('ptTilt').value/100;
+  const red=document.getElementById('ptRed').value/100;
+  const teeth=document.getElementById('ptTeeth').value/100;
+  const lens=document.getElementById('ptLens').value/1000;
+  const splash=parseInt(document.getElementById('ptSplash').value);
+  const dbl=document.getElementById('ptDbl').value/100;
+  const cx=w/2,cy=h/2,maxR=Math.sqrt(cx*cx+cy*cy);
+
+  // Draw double exposure base if loaded
+  let dblData=null;
+  if(dbl>0&&ptDblImg){
+    const tmpC=document.createElement('canvas');tmpC.width=w;tmpC.height=h;
+    const tmpCtx=tmpC.getContext('2d');
+    tmpCtx.drawImage(ptDblImg,0,0,w,h);
+    dblData=tmpCtx.getImageData(0,0,w,h).data;
+  }
+
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const i=(y*w+x)*4;
+    let r=src[i],g=src[i+1],b=src[i+2];
+
+    // Vignette: darken edges with radial falloff
+    if(vig>0){
+      const dist=Math.sqrt((x-cx)**2+(y-cy)**2)/maxR;
+      const vf=1-dist*dist*vig*1.5;
+      r*=vf;g*=vf;b*=vf;
+    }
+
+    // Red-eye: replace red pixels with dark
+    if(red>0&&r>150&&g<100&&b<100){
+      r=g*1.2;
+    }
+
+    // Teeth whiten: boost brightness of yellowish highlights
+    if(teeth>0&&r>180&&g>160&&b<180&&r+g>350){
+      const boost=teeth*40;
+      r=Math.min(255,r+boost*0.3);g=Math.min(255,g+boost*0.3);b=Math.min(255,b+boost);
+    }
+
+    // Color splash: keep selected hue, desaturate rest
+    if(splash>0){
+      const max=Math.max(r,g,b),min=Math.min(r,g,b);
+      let hue=0;
+      if(max!==min){
+        if(max===r)hue=(g-b)/(max-min)*60;
+        else if(max===g)hue=120+(b-r)/(max-min)*60;
+        else hue=240+(r-g)/(max-min)*60;
+      }
+      if(hue<0)hue+=360;
+      const hueDiff=Math.abs(hue-splash);
+      const keepColor=hueDiff<30||hueDiff>330;
+      if(!keepColor){const gray=0.299*r+0.587*g+0.114*b;r=gray;g=gray;b=gray;}
+    }
+
+    // Double exposure blend
+    if(dbl>0&&dblData){
+      const dr=dblData[i],dg=dblData[i+1],db=dblData[i+2];
+      // Screen blend mode: 1-(1-a)(1-b)
+      r=255-(255-r)*(255-dr)/255*dbl+r*(1-dbl);
+      g=255-(255-g)*(255-dg)/255*dbl+g*(1-dbl);
+      b=255-(255-b)*(255-db)/255*dbl+b*(1-dbl);
+    }
+
+    // Tilt-shift: blur top and bottom
+    if(tilt>0){
+      const bandCenter=0.5,bandWidth=0.15;
+      const yNorm=y/h;
+      const distFromBand=Math.abs(yNorm-bandCenter)-bandWidth;
+      if(distFromBand>0&&x>1&&x<w-1&&y>1&&y<h-1){
+        const blur=Math.min(1,distFromBand*tilt*3);
+        const ni=((y-1)*w+x)*4,si=((y+1)*w+x)*4,wi=(y*w+x-1)*4,ei=(y*w+x+1)*4;
+        r=r*(1-blur)+(src[ni]+src[si]+src[wi]+src[ei])/4*blur;
+        g=g*(1-blur)+(src[ni+1]+src[si+1]+src[wi+1]+src[ei+1])/4*blur;
+        b=b*(1-blur)+(src[ni+2]+src[si+2]+src[wi+2]+src[ei+2])/4*blur;
+        // Boost saturation in sharp band
+      } else if(distFromBand<=0){
+        const lum=0.299*r+0.587*g+0.114*b;
+        r=lum+(r-lum)*1.2;g=lum+(g-lum)*1.2;b=lum+(b-lum)*1.2;
+      }
+    }
+
+    out[i]=Math.max(0,Math.min(255,r));out[i+1]=Math.max(0,Math.min(255,g));out[i+2]=Math.max(0,Math.min(255,b));out[i+3]=src[i+3];
+  }
+  ctx.putImageData(new ImageData(out,w,h),0,0);
+}
+function downloadPro(){const a=document.createElement('a');a.download='ymshots-pro-'+Date.now()+'.jpg';a.href=document.getElementById('ptCanvas').toDataURL('image/jpeg',0.92);a.click();}
+
 // Add new views to nav
 viewLabels.babyglow='BabyGlow';viewLabels.agewarp='AgeWarp';viewLabels.familytree='FamilyTree';viewLabels.timelapse='TimeLapse';viewLabels.petportrait='Pet Portrait';
+viewLabels.photorevive='PhotoRevive';viewLabels.collage='Collage';viewLabels.backdrop='BackdropAI';viewLabels.protools='ProTools';
 
 // Init all sections
 renderSfGrid();

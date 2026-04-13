@@ -77,6 +77,21 @@ User: "${data.message}"`;
         useVision = !!imageBase64;
         break;
 
+      case 'photo-revive':
+        prompt = `Analyze this old/damaged photo. Identify: damage type (scratches, fading, mold, tears, water damage), overall condition (1-10), whether it's black & white or color, face quality. Then give 4 specific restoration steps for THIS photo. Respond in ${lang}. 3-4 sentences.`;
+        useVision = !!imageBase64;
+        break;
+
+      case 'backdrop-suggest':
+        prompt = `Look at this photo's subject. Suggest 5 creative background ideas that would look amazing. Include: 1 studio backdrop, 1 nature scene, 1 urban scene, 1 artistic/abstract, 1 seasonal/themed. Respond in ${lang} as JSON array of strings. Be specific and vivid.`;
+        useVision = !!imageBase64;
+        break;
+
+      case 'colorize':
+        prompt = `This is a black and white photo. Describe the most likely natural colors for everything visible: skin tones, clothing, background, objects. Be very specific with color descriptions (e.g. "warm chestnut brown hair", "navy blue suit", "sage green grass"). Respond in ${lang}. This will guide AI colorization.`;
+        useVision = !!imageBase64;
+        break;
+
       default:
         return { statusCode: 400, headers, body: '{"error":"Unknown action"}' };
     }
