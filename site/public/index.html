@@ -319,6 +319,13 @@ async function submitWaitlist(e) {
     // Silently fail — still show success to user
   }
 
+  // Notify owner of new signup
+  try {
+    fetch('/notify', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({action:'signup-alert', data:{name,email,phone,plan:assignedPlan,isPilot,code,locale:document.documentElement.lang||'en'}})
+    });
+  } catch(e) {}
+
   // Show success with pilot-specific message
   document.getElementById('waitlistForm').style.display = 'none';
   document.getElementById('waitlistSuccess').style.display = 'block';

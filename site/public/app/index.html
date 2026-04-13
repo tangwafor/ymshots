@@ -2204,6 +2204,92 @@ function downloadPro(){const a=document.createElement('a');a.download='ymshots-p
 viewLabels.babyglow='BabyGlow';viewLabels.agewarp='AgeWarp';viewLabels.familytree='FamilyTree';viewLabels.timelapse='TimeLapse';viewLabels.petportrait='Pet Portrait';
 viewLabels.photorevive='PhotoRevive';viewLabels.collage='Collage';viewLabels.backdrop='BackdropAI';viewLabels.protools='ProTools';
 
+// ═══ AUTOMATION — Analytics, Error Reporting, Auto-save ═══
+
+// Track feature usage
+function trackEvent(event,feature,metadata){
+  fetch('/notify',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'track',data:{event,feature,metadata,userId:localStorage.getItem('ym-userId')||'anon'}})
+  }).catch(()=>{});
+}
+
+// Global error handler → log to Supabase
+window.onerror=function(msg,source,line,col,error){
+  fetch('/notify',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'error',data:{
+      error:String(msg),stack:error?.stack||'',page:window.location.pathname,
+      userAgent:navigator.userAgent,userId:localStorage.getItem('ym-userId')||'anon'
+    }})
+  }).catch(()=>{});
+};
+window.addEventListener('unhandledrejection',e=>{
+  fetch('/notify',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'error',data:{
+      error:'Unhandled Promise: '+String(e.reason),page:window.location.pathname,
+      userAgent:navigator.userAgent
+    }})
+  }).catch(()=>{});
+});
+
+// Auto-save edit state to localStorage every 5 seconds
+let autoSaveInterval=setInterval(()=>{
+  if(editCanvas&&originalImageData){
+    localStorage.setItem('ym-editState',JSON.stringify(editState));
+    localStorage.setItem('ym-lastEdit',new Date().toISOString());
+  }
+},5000);
+
+// Restore edit state on load
+const savedEditState=localStorage.getItem('ym-editState');
+if(savedEditState){
+  try{Object.assign(editState,JSON.parse(savedEditState));}catch{}
+}
+
+// Gallery auto-expiry check
+function checkGalleryExpiry(){
+  const now=new Date();
+  galleries.forEach((g,i)=>{
+    if(g.expiresAt&&new Date(g.expiresAt)<now&&g.status==='ACTIVE'){
+      galleries[i].status='EXPIRED';
+    }
+  });
+  localStorage.setItem('ym-galleries',JSON.stringify(galleries));
+}
+checkGalleryExpiry();
+
+// Invoice overdue check
+function checkOverdueInvoices(){
+  invoices.forEach((inv,i)=>{
+    if(inv.status==='SENT'&&inv.dueDate&&new Date(inv.dueDate)<new Date()){
+      invoices[i].status='OVERDUE';
+    }
+  });
+  localStorage.setItem('ym-invoices',JSON.stringify(invoices));
+  // Also trigger server-side check
+  fetch('/notify',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'check-overdue',data:{}})
+  }).catch(()=>{});
+}
+checkOverdueInvoices();
+
+// Track page view
+trackEvent('page_view','app',{url:window.location.href,lang:currentLang});
+
+// Track navigation
+const origSetView=setView;
+setView=function(v){
+  origSetView(v);
+  trackEvent('navigate',v);
+};
+
+// Warn before leaving with unsaved edits
+window.addEventListener('beforeunload',e=>{
+  if(editCanvas&&originalImageData){
+    e.preventDefault();
+    e.returnValue='You have unsaved edits. Are you sure you want to leave?';
+  }
+});
+
 // Init all sections
 renderSfGrid();
 renderGalleries();

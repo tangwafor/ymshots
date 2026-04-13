@@ -31,6 +31,12 @@
   to = "/.netlify/functions/ai"
   status = 200
 
+# Notifications/analytics
+[[redirects]]
+  from = "/notify"
+  to = "/.netlify/functions/notify"
+  status = 200
+
 # SPA fallback for everything else
 [[redirects]]
   from = "/*"
