@@ -43,6 +43,11 @@
   to = "/.netlify/functions/backdrop"
   status = 200
 
+[[redirects]]
+  from = "/backdrop-poll"
+  to = "/.netlify/functions/backdrop-poll"
+  status = 200
+
 # Notifications/analytics
 [[redirects]]
   from = "/notify"

@@ -12,50 +12,55 @@ const handler: Handler = async (event) => {
 
   if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: '{"error":"POST only"}' };
-  if (!REPLICATE_TOKEN) return { statusCode: 500, headers, body: '{"error":"Replicate not configured"}' };
+  if (!REPLICATE_TOKEN) return { statusCode: 500, headers, body: '{"error":"Replicate not configured. Add REPLICATE_API_TOKEN env var."}' };
 
   try {
     const { prompt } = JSON.parse(event.body || '{}');
 
-    // Use Replicate's synchronous prediction API (faster, no polling needed)
-    const res = await fetch('https://api.replicate.com/v1/models/bytedance/sdxl-lightning-4step/predictions', {
+    // Step 1: Create prediction
+    const createRes = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${REPLICATE_TOKEN}`,
+        'Authorization': `Token ${REPLICATE_TOKEN}`,
         'Content-Type': 'application/json',
-        'Prefer': 'wait',
+        'Prefer': 'wait=8',
       },
       body: JSON.stringify({
+        version: '5f24084160c9089501c1b3545d9be3c27883ae2239b6f412990e82d4a6210f8f',
         input: {
-          prompt: `${prompt}, professional photography backdrop, high quality, detailed, beautiful lighting, no people, empty scene`,
-          negative_prompt: 'people, person, face, body, text, watermark, low quality, blurry',
+          prompt: `${prompt}, professional photography backdrop, high quality, 8k, detailed, beautiful cinematic lighting, no people, empty scene, landscape`,
+          negative_prompt: 'people, person, face, body, hands, text, watermark, low quality, blurry, ugly',
           width: 768,
           height: 512,
           num_inference_steps: 4,
-          guidance_scale: 1.5,
+          guidance_scale: 1.0,
+          scheduler: 'DPMSolverMultistep',
         },
       }),
     });
 
-    const result = await res.json();
+    const prediction = await createRes.json();
 
-    if (result.output?.[0]) {
-      // Fetch the output image and convert to base64
-      const imgRes = await fetch(result.output[0]);
+    // Check if sync mode returned the result directly
+    if (prediction.output?.[0]) {
+      const imgRes = await fetch(prediction.output[0]);
       const buffer = await imgRes.arrayBuffer();
       return { statusCode: 200, headers, body: JSON.stringify({ image: Buffer.from(buffer).toString('base64') }) };
     }
 
-    if (result.error) {
-      return { statusCode: 500, headers, body: JSON.stringify({ error: result.error }) };
+    // If not ready yet, return poll URL for client-side polling
+    if (prediction.id) {
+      return {
+        statusCode: 202,
+        headers,
+        body: JSON.stringify({
+          pollUrl: `https://api.replicate.com/v1/predictions/${prediction.id}`,
+          id: prediction.id,
+        }),
+      };
     }
 
-    // If sync didn't work, return the prediction URL for client-side polling
-    if (result.urls?.get) {
-      return { statusCode: 202, headers, body: JSON.stringify({ pollUrl: result.urls.get, id: result.id }) };
-    }
-
-    return { statusCode: 500, headers, body: JSON.stringify({ error: 'No output', raw: result }) };
+    return { statusCode: 500, headers, body: JSON.stringify({ error: prediction.detail || prediction.error || 'Unknown error', raw: prediction }) };
   } catch (err: any) {
     return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
   }

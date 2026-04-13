@@ -2162,7 +2162,7 @@ function generateAIBackdrop(scene){
       for(let i=0;i<15;i++){
         await new Promise(r=>setTimeout(r,2000));
         try{
-          const poll=await fetch(data.pollUrl,{headers:{'Authorization':'Bearer '+('r8_8xz')}}).then(r=>r.json());
+          const poll=await fetch('/backdrop-poll',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pollUrl:data.pollUrl})}).then(r=>r.json());
           if(poll.status==='succeeded'&&poll.output?.[0]){
             const imgR=await fetch(poll.output[0]);
             const buf=await imgR.arrayBuffer();
