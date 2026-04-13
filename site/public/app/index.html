@@ -281,8 +281,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;heigh
                 <div class="slider-row"><div class="slider-label"><span class="slider-name">Roughness</span><span class="slider-val">0</span></div><input type="range" min="0" max="100" value="0"></div>
               </div>
             </div>
-            <div style="padding:12px 16px">
-              <button style="width:100%;padding:8px;border-radius:5px;border:1px solid #333;background:transparent;color:var(--muted);font-size:11px;cursor:pointer">Reset all to default</button>
+            <div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px">
+              <button onclick="exportEditedPhoto()" style="width:100%;padding:10px;border-radius:5px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:600;cursor:pointer">Save / Download photo</button>
+              <button onclick="resetAllEdits()" style="width:100%;padding:8px;border-radius:5px;border:1px solid #333;background:transparent;color:var(--muted);font-size:11px;cursor:pointer">Reset all to default</button>
             </div>
           </div>
         </div>
@@ -501,33 +502,155 @@ function importPhotos(files){
   vc.appendChild(grid);
 }
 
-// Edit with real photo
+// ═══ REAL IMAGE PROCESSING ENGINE (Canvas pixel manipulation) ═══
 let currentEditFile=null;
+let originalImageData=null;  // Store original pixels — NEVER modified
+let editCanvas=null;
+let editCtx=null;
+let editImg=null;
+
+const editState={exposure:0,highlights:0,shadows:0,whites:0,blacks:0,contrast:0,clarity:0,vibrance:0,saturation:0,temperature:5500,tint:0,sharpening:0,noise:0,grain:0,grainSize:0,grainRough:0};
+const DEFAULT_STATE={exposure:0,highlights:0,shadows:0,whites:0,blacks:0,contrast:0,clarity:0,vibrance:0,saturation:0,temperature:5500,tint:0,sharpening:0,noise:0,grain:0,grainSize:0,grainRough:0};
+
 function loadPhotoForEdit(file){
   const preview=document.getElementById('editPreview');
-  if(file.type.startsWith('image/')){
-    const url=URL.createObjectURL(file);
-    preview.innerHTML='<img src="'+url+'" style="max-width:100%;max-height:100%;border-radius:4px;object-fit:contain">';
-  } else {
+  if(!file.type.startsWith('image/')){
     preview.innerHTML='<div style="text-align:center;color:var(--muted2)"><div style="font-size:14px">'+file.name+'</div><div style="font-size:11px;margin-top:4px">RAW preview requires desktop app</div></div>';
+    return;
+  }
+  editImg=new Image();
+  editImg.onload=()=>{
+    // Create canvas sized to image (max 1200px for performance)
+    const scale=Math.min(1,1200/Math.max(editImg.width,editImg.height));
+    const w=Math.round(editImg.width*scale);
+    const h=Math.round(editImg.height*scale);
+    editCanvas=document.createElement('canvas');
+    editCanvas.width=w;editCanvas.height=h;
+    editCanvas.style.cssText='max-width:100%;max-height:100%;border-radius:4px;object-fit:contain';
+    editCtx=editCanvas.getContext('2d',{willReadFrequently:true});
+    editCtx.drawImage(editImg,0,0,w,h);
+    originalImageData=editCtx.getImageData(0,0,w,h);
+    preview.innerHTML='';
+    preview.appendChild(editCanvas);
+    // Reset edit state
+    Object.assign(editState,DEFAULT_STATE);
+    resetSliders();
+  };
+  editImg.src=URL.createObjectURL(file);
+}
+
+// Reset all sliders to default
+function resetAllEdits(){
+  Object.assign(editState,DEFAULT_STATE);
+  resetSliders();
+  if(originalImageData&&editCtx){
+    editCtx.putImageData(new ImageData(new Uint8ClampedArray(originalImageData.data),originalImageData.width,originalImageData.height),0,0);
   }
 }
 
-function formatFileSize(bytes){
-  if(bytes<1024)return bytes+'B';
-  if(bytes<1048576)return(bytes/1024).toFixed(1)+'KB';
-  return(bytes/1048576).toFixed(1)+'MB';
+function resetSliders(){
+  document.querySelectorAll('.edit-panel input[type=range]').forEach(s=>{
+    const name=s.parentElement?.querySelector('.slider-name')?.textContent?.toLowerCase()||'';
+    s.value=name.includes('temp')?5500:0;
+    const valEl=s.parentElement?.querySelector('.slider-val');
+    if(valEl){valEl.textContent=name.includes('temp')?'5500K':'0';valEl.className='slider-val';}
+  });
 }
 
-function getFormatSummary(files){
-  const exts={};
-  files.forEach(f=>{const ext=f.name.split('.').pop().toUpperCase();exts[ext]=(exts[ext]||0)+1});
-  return Object.entries(exts).map(([k,v])=>v+' '+k).join(', ');
+// Wire reset button
+document.querySelector('.edit-panel button[style*="border"]')?.addEventListener('click',resetAllEdits);
+
+// ─── Per-pixel processing engine ───
+function applyEditsToPreview(){
+  if(!originalImageData||!editCtx)return;
+  const src=originalImageData.data;
+  const out=new Uint8ClampedArray(src.length);
+  const len=src.length;
+  const E=editState;
+
+  // Pre-compute adjustment values
+  const expMul=Math.pow(2,E.exposure);
+  const conFactor=(259*(E.contrast+255))/(255*(259-E.contrast));
+  const satFactor=1+E.saturation/100;
+  const vibFactor=E.vibrance/100;
+  const tempShift=(E.temperature-5500)/5000;
+  const tintShift=E.tint/150;
+  const hlAdj=E.highlights/200;
+  const shAdj=E.shadows/200;
+  const whAdj=E.whites/400;
+  const blAdj=E.blacks/400;
+  const clarityAmt=E.clarity/100;
+  const grainAmt=E.grain/100*0.15;
+
+  for(let i=0;i<len;i+=4){
+    let r=src[i]/255, g=src[i+1]/255, b=src[i+2]/255;
+
+    // 1. Exposure (multiply in linear-ish space)
+    r*=expMul; g*=expMul; b*=expMul;
+
+    // 2. Temperature (shift R/B)
+    r*=(1+tempShift*0.4);
+    b*=(1-tempShift*0.4);
+    g*=(1-tintShift*0.2);
+
+    // 3. Highlights/Shadows/Whites/Blacks
+    const lum=0.2126*r+0.7152*g+0.0722*b;
+    if(lum>0.5){
+      const hlMul=1+hlAdj*(lum-0.5)*2;
+      r*=hlMul;g*=hlMul;b*=hlMul;
+    } else {
+      const shMul=1+shAdj*(0.5-lum)*2;
+      r*=shMul;g*=shMul;b*=shMul;
+    }
+    const whMul=1+whAdj*lum;
+    const blMul=1+blAdj*(1-lum);
+    r*=whMul*blMul; g*=whMul*blMul; b*=whMul*blMul;
+
+    // 4. Contrast (S-curve around 0.5)
+    r=(r-0.5)*conFactor/128+0.5;
+    g=(g-0.5)*conFactor/128+0.5;
+    b=(b-0.5)*conFactor/128+0.5;
+
+    // 5. Vibrance (boost low-saturation pixels more)
+    const maxC=Math.max(r,g,b), minC=Math.min(r,g,b);
+    const curSat=maxC>0?(maxC-minC)/maxC:0;
+    const vibBoost=vibFactor*(1-curSat);
+    const lum2=0.2126*r+0.7152*g+0.0722*b;
+    r=lum2+(r-lum2)*(1+vibBoost);
+    g=lum2+(g-lum2)*(1+vibBoost);
+    b=lum2+(b-lum2)*(1+vibBoost);
+
+    // 6. Saturation (uniform)
+    const lum3=0.2126*r+0.7152*g+0.0722*b;
+    r=lum3+(r-lum3)*satFactor;
+    g=lum3+(g-lum3)*satFactor;
+    b=lum3+(b-lum3)*satFactor;
+
+    // 7. Clarity (local contrast boost — simplified as midtone contrast)
+    if(clarityAmt!==0){
+      const mid=0.5;
+      const dist=lum3-mid;
+      const boost=clarityAmt*dist*0.5;
+      r+=boost;g+=boost;b+=boost;
+    }
+
+    // 8. Grain (noise)
+    if(grainAmt>0){
+      const noise=(Math.random()-0.5)*grainAmt;
+      r+=noise;g+=noise;b+=noise;
+    }
+
+    // Clamp and write
+    out[i]=Math.max(0,Math.min(255,r*255))|0;
+    out[i+1]=Math.max(0,Math.min(255,g*255))|0;
+    out[i+2]=Math.max(0,Math.min(255,b*255))|0;
+    out[i+3]=src[i+3];
+  }
+
+  editCtx.putImageData(new ImageData(out,originalImageData.width,originalImageData.height),0,0);
 }
 
-// Edit sliders — apply real CSS filters to the photo preview
-const editState={exposure:0,highlights:0,shadows:0,whites:0,blacks:0,contrast:0,clarity:0,vibrance:0,saturation:0,temperature:5500,tint:0,sharpening:0,noise:0,grain:0,grainSize:0,grainRough:0};
-
+// Wire sliders to real processing
 document.querySelectorAll('.edit-panel input[type=range]').forEach(s=>{
   s.addEventListener('input',function(){
     const valEl=this.parentElement.querySelector('.slider-val');
@@ -539,7 +662,6 @@ document.querySelectorAll('.edit-panel input[type=range]').forEach(s=>{
       const isDefault=(name.includes('temp')&&v==5500)||(!name.includes('temp')&&v==0);
       valEl.className=isDefault?'slider-val':'slider-val changed';
     }
-    // Map slider to edit state
     if(name.includes('expos'))editState.exposure=v/10;
     if(name.includes('high'))editState.highlights=v;
     if(name.includes('shadow'))editState.shadows=v;
@@ -558,27 +680,25 @@ document.querySelectorAll('.edit-panel input[type=range]').forEach(s=>{
   });
 });
 
-function applyEditsToPreview(){
-  const img=document.querySelector('#editPreview img');
-  if(!img)return;
+// Export edited photo
+function exportEditedPhoto(){
+  if(!editCanvas)return;
+  const a=document.createElement('a');
+  a.download='ymshots-edited-'+Date.now()+'.jpg';
+  a.href=editCanvas.toDataURL('image/jpeg',0.92);
+  a.click();
+}
 
-  // Map edit state to CSS filters
-  const brightness=1+editState.exposure*0.2;
-  const contrast=1+editState.contrast/100;
-  const saturate=1+(editState.saturation+editState.vibrance*0.5)/100;
-  const hueRotate=editState.tint*0.5;
-  // Temperature → sepia + hue (warm=sepia, cool=hue shift)
-  const tempOffset=(editState.temperature-5500)/10000;
-  const sepia=Math.max(0,tempOffset*0.3);
-  const coolShift=Math.min(0,tempOffset)*50;
+function formatFileSize(bytes){
+  if(bytes<1024)return bytes+'B';
+  if(bytes<1048576)return(bytes/1024).toFixed(1)+'KB';
+  return(bytes/1048576).toFixed(1)+'MB';
+}
 
-  img.style.filter=[
-    'brightness('+brightness.toFixed(2)+')',
-    'contrast('+contrast.toFixed(2)+')',
-    'saturate('+saturate.toFixed(2)+')',
-    'sepia('+sepia.toFixed(2)+')',
-    'hue-rotate('+(hueRotate+coolShift).toFixed(1)+'deg)',
-  ].join(' ');
+function getFormatSummary(files){
+  const exts={};
+  files.forEach(f=>{const ext=f.name.split('.').pop().toUpperCase();exts[ext]=(exts[ext]||0)+1});
+  return Object.entries(exts).map(([k,v])=>v+' '+k).join(', ');
 }
 
 // Drag and drop — real files
@@ -649,35 +769,170 @@ function applyStyleForge(effect,btn){
     const d=imageData.data;
     const intensity=document.getElementById('sfIntensity').value/100;
 
+    const w=canvas.width,h=canvas.height;
+    const mix=(orig,eff)=>orig*(1-intensity)+eff*intensity; // Blend original with effect
+
     switch(effect.id){
-      case 'pencil':case 'charcoal':
-        for(let i=0;i<d.length;i+=4){const g=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];const v=effect.id==='charcoal'?g*0.7:g;d[i]=d[i+1]=d[i+2]=255-((255-v)*intensity+v*(1-intensity));}
+      case 'pencil': {
+        // Real pencil sketch: grayscale → invert → blur → color dodge blend
+        const gray=new Uint8Array(w*h);
+        const inv=new Uint8Array(w*h);
+        for(let i=0;i<w*h;i++){gray[i]=Math.round(0.299*d[i*4]+0.587*d[i*4+1]+0.114*d[i*4+2]);inv[i]=255-gray[i];}
+        // Box blur the inverted
+        const blurred=boxBlur(inv,w,h,Math.max(8,Math.round(20*intensity)));
+        // Color dodge blend: result = gray / (1 - blurred/255)
+        for(let i=0;i<w*h;i++){const p=i*4;const dodge=blurred[i]>=255?255:Math.min(255,Math.round(gray[i]*255/(255-blurred[i])));const v=mix(gray[i],dodge);d[p]=d[p+1]=d[p+2]=v;}
         break;
-      case 'cartoon':
-        for(let i=0;i<d.length;i+=4){d[i]=Math.round(d[i]/32)*32*intensity+d[i]*(1-intensity);d[i+1]=Math.round(d[i+1]/32)*32*intensity+d[i+1]*(1-intensity);d[i+2]=Math.round(d[i+2]/32)*32*intensity+d[i+2]*(1-intensity);}
+      }
+      case 'charcoal': {
+        // Charcoal: edge detection + dark overlay + texture
+        for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const p=(y*w+x)*4;
+          const gx=(-1*grayAt(d,w,(x-1),(y-1))+grayAt(d,w,(x+1),(y-1))-2*grayAt(d,w,(x-1),y)+2*grayAt(d,w,(x+1),y)-grayAt(d,w,(x-1),(y+1))+grayAt(d,w,(x+1),(y+1)));
+          const gy=(-1*grayAt(d,w,(x-1),(y-1))-2*grayAt(d,w,x,(y-1))-grayAt(d,w,(x+1),(y-1))+grayAt(d,w,(x-1),(y+1))+2*grayAt(d,w,x,(y+1))+grayAt(d,w,(x+1),(y+1)));
+          const edge=Math.min(255,Math.sqrt(gx*gx+gy*gy));
+          const v=mix(0.299*d[p]+0.587*d[p+1]+0.114*d[p+2],255-edge*1.5);d[p]=d[p+1]=d[p+2]=Math.max(0,Math.min(255,v));}
         break;
-      case 'comic':
-        for(let i=0;i<d.length;i+=4){const g=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];const t=g>128?255:0;d[i]=t*intensity+d[i]*(1-intensity);d[i+1]=t*intensity+d[i+1]*(1-intensity);d[i+2]=t*intensity+d[i+2]*(1-intensity);}
+      }
+      case 'cartoon': {
+        // Cartoon: bilateral smooth + color quantize + edge overlay
+        const levels=Math.max(4,Math.round(8-6*intensity));
+        const step=256/levels;
+        // Color quantization
+        for(let i=0;i<d.length;i+=4){
+          d[i]=mix(d[i],Math.round(d[i]/step)*step);
+          d[i+1]=mix(d[i+1],Math.round(d[i+1]/step)*step);
+          d[i+2]=mix(d[i+2],Math.round(d[i+2]/step)*step);
+        }
+        // Edge detection overlay
+        const edgeData=ctx.getImageData(0,0,w,h).data;
+        for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const p=(y*w+x)*4;
+          const gx=Math.abs(grayAt(edgeData,w,x+1,y)-grayAt(edgeData,w,x-1,y));
+          const gy=Math.abs(grayAt(edgeData,w,x,y+1)-grayAt(edgeData,w,x,y-1));
+          if(gx+gy>30*intensity){d[p]*=0.15;d[p+1]*=0.15;d[p+2]*=0.15;}} // Dark edges
         break;
-      case 'watercolor':
-        for(let i=0;i<d.length;i+=4){const n=(Math.random()-0.5)*30*intensity;d[i]=Math.min(255,d[i]+n);d[i+1]=Math.min(255,d[i+1]+n);d[i+2]=Math.min(255,d[i+2]+n);}
+      }
+      case 'comic': {
+        // Comic: high contrast B&W with halftone dots simulation
+        for(let y=0;y<h;y++)for(let x=0;x<w;x++){const p=(y*w+x)*4;
+          const g=0.299*d[p]+0.587*d[p+1]+0.114*d[p+2];
+          // Halftone: threshold varies by position
+          const dotSize=4;const threshold=128+40*Math.sin(x/dotSize)*Math.cos(y/dotSize);
+          const v=g>threshold?255:0;
+          d[p]=mix(d[p],v);d[p+1]=mix(d[p+1],v);d[p+2]=mix(d[p+2],v);}
         break;
-      case 'oil':
-        for(let i=0;i<d.length;i+=4){d[i]=Math.round(d[i]/16)*16*intensity+d[i]*(1-intensity);d[i+1]=Math.round(d[i+1]/16)*16*intensity+d[i+1]*(1-intensity);d[i+2]=Math.round(d[i+2]/16)*16*intensity+d[i+2]*(1-intensity);}
+      }
+      case 'watercolor': {
+        // Watercolor: blur + soften edges + pastel shift + noise
+        const blurR=Math.max(3,Math.round(12*intensity));
+        const src2=new Uint8ClampedArray(d);
+        simpleBlur(src2,d,w,h,blurR);
+        for(let i=0;i<d.length;i+=4){
+          // Shift toward pastels (lighten + desaturate slightly)
+          const g=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+          d[i]=mix(src2[i],d[i]*0.85+g*0.15+20);
+          d[i+1]=mix(src2[i+1],d[i+1]*0.85+g*0.15+20);
+          d[i+2]=mix(src2[i+2],d[i+2]*0.85+g*0.15+20);
+          // Paper texture noise
+          const n=(Math.random()-0.5)*15*intensity;
+          d[i]+=n;d[i+1]+=n;d[i+2]+=n;
+        }
         break;
-      case 'popart':
-        for(let i=0;i<d.length;i+=4){d[i]=Math.round(d[i]/64)*85*intensity+d[i]*(1-intensity);d[i+1]=Math.round(d[i+1]/64)*85*intensity+d[i+1]*(1-intensity);d[i+2]=Math.round(d[i+2]/64)*85*intensity+d[i+2]*(1-intensity);}
+      }
+      case 'oil': {
+        // Oil painting: Kuwahara-like filter (use mean of region with lowest variance)
+        const r=Math.max(2,Math.round(6*intensity));
+        const src3=new Uint8ClampedArray(d);
+        for(let y=r;y<h-r;y+=1)for(let x=r;x<w-r;x+=1){
+          let bestR=0,bestG=0,bestB=0,minVar=1e9;
+          for(let qy=-1;qy<=0;qy++)for(let qx=-1;qx<=0;qx++){
+            let sr=0,sg=0,sb=0,sr2=0,sg2=0,sb2=0,cnt=0;
+            for(let ky=qy*r;ky<qy*r+r;ky++)for(let kx=qx*r;kx<qx*r+r;kx++){
+              const pi=((y+ky)*w+(x+kx))*4;if(pi<0||pi>=d.length)continue;
+              sr+=src3[pi];sg+=src3[pi+1];sb+=src3[pi+2];
+              sr2+=src3[pi]*src3[pi];sg2+=src3[pi+1]*src3[pi+1];sb2+=src3[pi+2]*src3[pi+2];cnt++;
+            }
+            if(cnt>0){const v=(sr2/cnt-(sr/cnt)**2)+(sg2/cnt-(sg/cnt)**2)+(sb2/cnt-(sb/cnt)**2);
+            if(v<minVar){minVar=v;bestR=sr/cnt;bestG=sg/cnt;bestB=sb/cnt;}}
+          }
+          const p=(y*w+x)*4;d[p]=mix(src3[p],bestR);d[p+1]=mix(src3[p+1],bestG);d[p+2]=mix(src3[p+2],bestB);
+        }
         break;
-      case 'neon':
-        for(let i=0;i<d.length;i+=4){const g=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];if(g>100&&g<200){d[i]=224*intensity;d[i+1]=148*intensity;d[i+2]=58*intensity;}else{d[i]*=(1-intensity*0.8);d[i+1]*=(1-intensity*0.8);d[i+2]*=(1-intensity*0.8);}}
+      }
+      case 'popart': {
+        // Pop Art: 4-color posterize with vivid color rotation per quadrant
+        const colors=[[255,0,100],[0,200,255],[255,200,0],[100,255,0]];
+        for(let i=0;i<d.length;i+=4){
+          const g=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+          const ci=Math.min(3,Math.floor(g/64));
+          d[i]=mix(d[i],colors[ci][0]);d[i+1]=mix(d[i+1],colors[ci][1]);d[i+2]=mix(d[i+2],colors[ci][2]);
+        }
         break;
-      case 'mosaic':
-        const bs=Math.max(4,Math.round(20*intensity));
-        for(let y=0;y<canvas.height;y+=bs)for(let x=0;x<canvas.width;x+=bs){const idx=(y*canvas.width+x)*4;for(let by=0;by<bs&&y+by<canvas.height;by++)for(let bx=0;bx<bs&&x+bx<canvas.width;bx++){const ti=((y+by)*canvas.width+(x+bx))*4;d[ti]=d[idx];d[ti+1]=d[idx+1];d[ti+2]=d[idx+2];}}
+      }
+      case 'anime': case '3d': case 'caricature': {
+        // Anime/3D/Caricature: smooth + edge + saturate + brighten eyes area
+        const levels2=6;const step2=256/levels2;
+        for(let i=0;i<d.length;i+=4){
+          d[i]=mix(d[i],Math.round(d[i]/step2)*step2*1.1);
+          d[i+1]=mix(d[i+1],Math.round(d[i+1]/step2)*step2*1.1);
+          d[i+2]=mix(d[i+2],Math.round(d[i+2]/step2)*step2*1.15);
+        }
+        // Edge overlay
+        for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const p=(y*w+x)*4;
+          const gx=Math.abs(grayAt(d,w,x+1,y)-grayAt(d,w,x-1,y));
+          const gy=Math.abs(grayAt(d,w,x,y+1)-grayAt(d,w,x,y-1));
+          if(gx+gy>25){d[p]*=0.2;d[p+1]*=0.2;d[p+2]*=0.2;}}
         break;
-      default:
-        // Sepia-like for remaining effects
-        for(let i=0;i<d.length;i+=4){const g=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];d[i]=(g+40)*intensity+d[i]*(1-intensity);d[i+1]=g*intensity+d[i+1]*(1-intensity);d[i+2]=(g-20)*intensity+d[i+2]*(1-intensity);}
+      }
+      case 'neon': {
+        // Neon glow: edge detection on dark background with colored edges
+        for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const p=(y*w+x)*4;
+          const gx=grayAt(d,w,x+1,y)-grayAt(d,w,x-1,y);
+          const gy=grayAt(d,w,x,y+1)-grayAt(d,w,x,y-1);
+          const edge=Math.min(255,Math.sqrt(gx*gx+gy*gy)*2);
+          // Neon amber on edges, dark elsewhere
+          d[p]=mix(d[p],edge>30?224*(edge/255):d[p]*0.1);
+          d[p+1]=mix(d[p+1],edge>30?148*(edge/255):d[p+1]*0.1);
+          d[p+2]=mix(d[p+2],edge>30?58*(edge/255):d[p+2]*0.1);
+        }
+        break;
+      }
+      case 'mosaic': {
+        const bs=Math.max(4,Math.round(24*intensity));
+        for(let y=0;y<h;y+=bs)for(let x=0;x<w;x+=bs){
+          let sr=0,sg=0,sb=0,cnt=0;
+          for(let by=0;by<bs&&y+by<h;by++)for(let bx=0;bx<bs&&x+bx<w;bx++){
+            const pi=((y+by)*w+(x+bx))*4;sr+=d[pi];sg+=d[pi+1];sb+=d[pi+2];cnt++;
+          }
+          sr/=cnt;sg/=cnt;sb/=cnt;
+          for(let by=0;by<bs&&y+by<h;by++)for(let bx=0;bx<bs&&x+bx<w;bx++){
+            const pi=((y+by)*w+(x+bx))*4;d[pi]=sr;d[pi+1]=sg;d[pi+2]=sb;}
+        }
+        break;
+      }
+    }
+
+    // Helper: get grayscale value at (x,y)
+    function grayAt(data,w,x,y){const p=(y*w+x)*4;return 0.299*data[p]+0.587*data[p+1]+0.114*data[p+2];}
+    // Helper: box blur single channel
+    function boxBlur(src,w,h,r){
+      const out=new Uint8Array(w*h);
+      for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+        let sum=0,cnt=0;
+        for(let ky=Math.max(0,y-r);ky<=Math.min(h-1,y+r);ky++)
+          for(let kx=Math.max(0,x-r);kx<=Math.min(w-1,x+r);kx++){sum+=src[ky*w+kx];cnt++;}
+        out[y*w+x]=sum/cnt;
+      }
+      return out;
+    }
+    // Helper: simple blur for RGBA
+    function simpleBlur(src,dst,w,h,r){
+      for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+        let sr=0,sg=0,sb=0,cnt=0;
+        for(let ky=Math.max(0,y-r);ky<=Math.min(h-1,y+r);ky+=2)
+          for(let kx=Math.max(0,x-r);kx<=Math.min(w-1,x+r);kx+=2){
+            const pi=(ky*w+kx)*4;sr+=src[pi];sg+=src[pi+1];sb+=src[pi+2];cnt++;}
+        const p=(y*w+x)*4;dst[p]=sr/cnt;dst[p+1]=sg/cnt;dst[p+2]=sb/cnt;dst[p+3]=255;
+      }
     }
 
     ctx.putImageData(imageData,0,0);
