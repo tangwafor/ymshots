@@ -1314,14 +1314,40 @@ async function getSmartReplies(message){
   }catch{container.innerHTML+='<button onclick="document.getElementById(\'chatInput\').value=this.textContent;sendChatMessage()" style="padding:4px 10px;border-radius:12px;border:1px solid #333;background:transparent;color:var(--muted);font-size:11px;cursor:pointer">Thank you!</button>';}
 }
 
-// ═══ AI HELPER ═══
+// ═══ AI HELPER — supports text AND vision ═══
 let currentLang='en';
+
 async function callAI(action,data){
   try{
     const res=await fetch('/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,data,locale:currentLang})});
     const json=await res.json();
     return json.result||'';
   }catch{return '';}
+}
+
+async function callAIWithImage(action,data,imageBase64){
+  try{
+    const res=await fetch('/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,data,locale:currentLang,imageBase64})});
+    const json=await res.json();
+    return json.result||'';
+  }catch{return '';}
+}
+
+// Convert image file to base64 (resized for API efficiency)
+function getImageBase64(file,maxSize){
+  return new Promise(resolve=>{
+    const img=new Image();
+    img.onload=()=>{
+      const canvas=document.createElement('canvas');
+      const scale=Math.min(1,maxSize/Math.max(img.width,img.height));
+      canvas.width=Math.round(img.width*scale);
+      canvas.height=Math.round(img.height*scale);
+      canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+      const dataUrl=canvas.toDataURL('image/jpeg',0.7);
+      resolve(dataUrl.split(',')[1]); // Return just the base64 part
+    };
+    img.src=URL.createObjectURL(file);
+  });
 }
 
 // ═══ STATS ═══
@@ -1381,10 +1407,12 @@ function loadBabyPhoto(){
       document.getElementById('babyPlaceholder').style.display='none';
       document.getElementById('babyControls').style.display='flex';
       applyBabyGlow();
-      // AI analysis
-      callAI('baby-analyze',{fileName:file.name,width:img.width,height:img.height}).then(r=>{
-        document.getElementById('babyAiResult').style.display='block';
-        document.getElementById('babyAiResult').textContent='YM: '+r;
+      // AI vision analysis — send actual image
+      getImageBase64(file,300).then(b64=>{
+        callAIWithImage('baby-analyze',{},b64).then(r=>{
+          document.getElementById('babyAiResult').style.display='block';
+          document.getElementById('babyAiResult').textContent='YM: '+r;
+        });
       });
     };
     img.src=URL.createObjectURL(file);
@@ -1448,37 +1476,94 @@ function loadAgePhoto(){
       orig.style.display='block';
       document.getElementById('agewarpUpload').style.display='none';
 
-      // Generate age variations using Canvas filters
-      const ages=[5,25,50,80];
+      // Generate age variations — DRAMATIC visible differences
       document.querySelectorAll('.age-canvas').forEach(c=>{
         const age=parseInt(c.dataset.age);
-        c.width=200;c.height=200*(img.height/img.width);
+        c.width=200;c.height=Math.round(200*(img.height/img.width));
         const ctx=c.getContext('2d');
         ctx.drawImage(img,0,0,c.width,c.height);
         const imageData=ctx.getImageData(0,0,c.width,c.height);
         const d=imageData.data;
+        const w=c.width,h=c.height;
 
         if(age===5){
-          // Younger: softer, brighter, rounder feel
-          for(let i=0;i<d.length;i+=4){d[i]=Math.min(255,d[i]*1.05+10);d[i+1]=Math.min(255,d[i+1]*1.05+10);d[i+2]=Math.min(255,d[i+2]*1.05+12);}
+          // CHILD: much brighter, very smooth skin, pinker, wider eyes effect, softer
+          for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+            const i=(y*w+x)*4;
+            let r=d[i],g=d[i+1],b=d[i+2];
+            // Brighten significantly
+            r=Math.min(255,r*1.2+30);g=Math.min(255,g*1.2+30);b=Math.min(255,b*1.2+35);
+            // Smooth: blend with neighbors
+            if(x>1&&x<w-1&&y>1&&y<h-1){
+              const ni=((y-1)*w+x)*4,si=((y+1)*w+x)*4,wi=(y*w+x-1)*4,ei=(y*w+x+1)*4;
+              r=(r*2+d[ni]+d[si]+d[wi]+d[ei])/6;
+              g=(g*2+d[ni+1]+d[si+1]+d[wi+1]+d[ei+1])/6;
+              b=(b*2+d[ni+2]+d[si+2]+d[wi+2]+d[ei+2])/6;
+            }
+            // Add warmth + pink
+            r=Math.min(255,r+15);b=Math.min(255,b+8);
+            d[i]=r;d[i+1]=g;d[i+2]=b;
+          }
         } else if(age===25){
-          // Prime: sharpen slightly, vivid
-          for(let i=0;i<d.length;i+=4){const lum=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];d[i]=lum+(d[i]-lum)*1.15;d[i+1]=lum+(d[i+1]-lum)*1.15;d[i+2]=lum+(d[i+2]-lum)*1.15;}
+          // PRIME: vivid colors, sharp, healthy glow, high contrast
+          for(let i=0;i<d.length;i+=4){
+            let r=d[i],g=d[i+1],b=d[i+2];
+            const lum=0.299*r+0.587*g+0.114*b;
+            // Boost saturation strongly
+            r=lum+(r-lum)*1.4;g=lum+(g-lum)*1.4;b=lum+(b-lum)*1.4;
+            // Increase contrast
+            r=(r-128)*1.2+128;g=(g-128)*1.2+128;b=(b-128)*1.2+128;
+            // Healthy warm glow
+            r=Math.min(255,r+8);
+            d[i]=Math.max(0,Math.min(255,r));d[i+1]=Math.max(0,Math.min(255,g));d[i+2]=Math.max(0,Math.min(255,b));
+          }
         } else if(age===50){
-          // Older: slightly desaturated, warm, reduced contrast
-          for(let i=0;i<d.length;i+=4){const lum=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];d[i]=lum+(d[i]-lum)*0.85+5;d[i+1]=lum+(d[i+1]-lum)*0.85;d[i+2]=lum+(d[i+2]-lum)*0.8-3;}
+          // MIDDLE AGE: noticeable desaturation, slight wrinkle texture, warm, less contrast
+          for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+            const i=(y*w+x)*4;
+            let r=d[i],g=d[i+1],b=d[i+2];
+            const lum=0.299*r+0.587*g+0.114*b;
+            // Desaturate significantly
+            r=lum+(r-lum)*0.6;g=lum+(g-lum)*0.6;b=lum+(b-lum)*0.55;
+            // Reduce contrast
+            r=(r-128)*0.85+128;g=(g-128)*0.85+128;b=(b-128)*0.85+128;
+            // Add warm yellow cast
+            r=Math.min(255,r+12);g=Math.min(255,g+5);b=Math.max(0,b-8);
+            // Subtle texture/wrinkle noise
+            if(Math.random()<0.15){const n=(Math.random()-0.5)*15;r+=n;g+=n;b+=n;}
+            d[i]=Math.max(0,Math.min(255,r));d[i+1]=Math.max(0,Math.min(255,g));d[i+2]=Math.max(0,Math.min(255,b));
+          }
         } else if(age===80){
-          // Elderly: desaturated, lower contrast, warm highlights, softer
-          for(let i=0;i<d.length;i+=4){const lum=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];d[i]=lum+(d[i]-lum)*0.6+10;d[i+1]=lum+(d[i+1]-lum)*0.6+5;d[i+2]=lum+(d[i+2]-lum)*0.5;d[i]+=Math.random()*8;d[i+1]+=Math.random()*6;d[i+2]+=Math.random()*4;}
+          // ELDERLY: heavily desaturated, very low contrast, wrinkled texture, yellowish, soft
+          for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+            const i=(y*w+x)*4;
+            let r=d[i],g=d[i+1],b=d[i+2];
+            const lum=0.299*r+0.587*g+0.114*b;
+            // Heavy desaturation (almost grayscale)
+            r=lum+(r-lum)*0.25;g=lum+(g-lum)*0.25;b=lum+(b-lum)*0.2;
+            // Very low contrast
+            r=(r-128)*0.6+128;g=(g-128)*0.6+128;b=(b-128)*0.6+128;
+            // Strong warm/yellow cast
+            r=Math.min(255,r+25);g=Math.min(255,g+12);b=Math.max(0,b-15);
+            // Darken overall slightly
+            r*=0.9;g*=0.9;b*=0.9;
+            // Heavy wrinkle texture
+            if(Math.random()<0.3){const n=(Math.random()-0.5)*25;r+=n;g+=n;b+=n;}
+            // Age spots (random darker patches)
+            if(Math.random()<0.02){r*=0.7;g*=0.7;b*=0.65;}
+            d[i]=Math.max(0,Math.min(255,r));d[i+1]=Math.max(0,Math.min(255,g));d[i+2]=Math.max(0,Math.min(255,b));
+          }
         }
         ctx.putImageData(imageData,0,0);
         c.style.display='block';
       });
 
-      // AI analysis
-      callAI('age-warp',{fileName:file.name}).then(r=>{
-        const el=document.getElementById('ageAiResult');
-        el.style.display='block';el.innerHTML='<strong style="color:var(--accent)">YM Analysis:</strong> '+r;
+      // Send actual image to Claude for vision analysis
+      getImageBase64(file,300).then(b64=>{
+        callAIWithImage('age-warp',{},b64).then(r=>{
+          const el=document.getElementById('ageAiResult');
+          el.style.display='block';el.innerHTML='<strong style="color:var(--accent)">YM Analysis:</strong> '+r;
+        });
       });
     };
     img.src=URL.createObjectURL(file);
@@ -1605,9 +1690,11 @@ function loadPetPhoto(){
       document.getElementById('petPlaceholder').style.display='none';
       document.getElementById('petControls').style.display='flex';
       applyPetEnhance();
-      callAI('pet-analyze',{fileName:file.name,width:img.width,height:img.height}).then(r=>{
-        document.getElementById('petAiResult').style.display='block';
-        document.getElementById('petAiResult').textContent='YM: '+r;
+      getImageBase64(file,300).then(b64=>{
+        callAIWithImage('pet-analyze',{},b64).then(r=>{
+          document.getElementById('petAiResult').style.display='block';
+          document.getElementById('petAiResult').textContent='YM: '+r;
+        });
       });
     };
     img.src=URL.createObjectURL(file);
