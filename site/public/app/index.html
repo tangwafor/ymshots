@@ -961,31 +961,84 @@ document.getElementById('sfDownloadBtn')?.addEventListener('click',()=>{
   a.click();
 });
 
-// ═══ GALLERIES — Create, view, share ═══
+// ═══ GALLERIES — Create from imported photos, share, manage ═══
 let galleries=JSON.parse(localStorage.getItem('ym-galleries')||'[]');
+let galleryPhotoUrls={}; // Cache object URLs for gallery photos
 
 function renderGalleries(){
   const list=document.getElementById('galleryList');
+  const t=currentLang==='fr';
   if(galleries.length===0){
-    list.innerHTML='<div style="padding:40px;text-align:center;border:1px dashed #222;border-radius:8px;color:var(--muted2);font-size:13px">'+(currentLang==='fr'?'Aucune galerie. Importez des photos d\'abord.':'No galleries yet. Import photos first.')+'</div>';
+    if(importedPhotos.length===0){
+      list.innerHTML='<div style="padding:40px;text-align:center;border:1px dashed #222;border-radius:8px;color:var(--muted2);font-size:13px">'+(t?'Importez d\'abord des photos, puis créez une galerie.':'Import photos first, then create a gallery.')+'</div>';
+    } else {
+      list.innerHTML='<div style="padding:40px;text-align:center;border:1px dashed #222;border-radius:8px;color:var(--muted2);font-size:13px">'+(t?'Aucune galerie. Cliquez "+ Nouvelle galerie" pour commencer.':'No galleries yet. Click "+ New Gallery" to start.')+'</div>';
+    }
     return;
   }
-  list.innerHTML=galleries.map((g,i)=>'<div style="padding:16px;border-radius:8px;background:var(--surface);border:1px solid var(--border);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:14px;font-weight:600">'+g.title+'</div><div style="font-size:11px;color:var(--muted)">'+g.photos+' photos · '+g.date+'</div></div><div style="display:flex;gap:8px"><button onclick="shareGallery('+i+')" class="tb-btn" style="color:var(--accent)">'+(currentLang==='fr'?'Partager':'Share')+'</button><button onclick="deleteGallery('+i+')" class="tb-btn" style="color:#e74c3c">'+(currentLang==='fr'?'Supprimer':'Delete')+'</button></div></div>').join('');
+  list.innerHTML=galleries.map((g,i)=>{
+    // Show thumbnail strip
+    const thumbs=g.photoNames?g.photoNames.slice(0,5).map(n=>'<div style="width:48px;height:32px;border-radius:3px;background:#222;display:inline-flex;align-items:center;justify-content:center;font-size:7px;color:#444;margin-right:4px">'+n.substring(0,8)+'</div>').join(''):'';
+    return '<div style="padding:16px;border-radius:8px;background:var(--surface);border:1px solid var(--border);margin-bottom:8px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+      +'<div><div style="font-size:14px;font-weight:600">'+g.title+'</div>'
+      +'<div style="font-size:11px;color:var(--muted)">'+g.photoCount+' photos · '+g.date+(g.clientName?' · '+(t?'Client: ':'Client: ')+g.clientName:'')+'</div></div>'
+      +'<div style="display:flex;gap:6px">'
+      +'<button onclick="shareGallery('+i+')" class="tb-btn" style="color:var(--accent)">'+(t?'Partager':'Share')+'</button>'
+      +'<button onclick="downloadGalleryZip('+i+')" class="tb-btn">'+(t?'Télécharger':'Download')+'</button>'
+      +'<button onclick="deleteGallery('+i+')" class="tb-btn" style="color:#e74c3c">'+(t?'Supprimer':'Delete')+'</button>'
+      +'</div></div>'
+      +'<div style="display:flex;gap:4px;overflow-x:auto">'+thumbs
+      +(g.photoCount>5?'<div style="width:48px;height:32px;border-radius:3px;background:#1a1a1a;display:inline-flex;align-items:center;justify-content:center;font-size:9px;color:#666">+'+(g.photoCount-5)+'</div>':'')
+      +'</div></div>';
+  }).join('');
   updateStats();
 }
 
 function createGallery(){
-  const title=prompt(currentLang==='fr'?'Nom de la galerie:':'Gallery name:');
+  const t=currentLang==='fr';
+  if(importedPhotos.length===0){
+    alert(t?'Importez d\'abord des photos dans la bibliothèque.':'Import photos in the Library first.');
+    setView('vault');return;
+  }
+  const title=prompt(t?'Nom de la galerie:':'Gallery name:');
   if(!title)return;
-  galleries.push({title,photos:importedPhotos.length,date:new Date().toLocaleDateString(),slug:title.toLowerCase().replace(/[^a-z0-9]/g,'-')+'-'+Date.now().toString(36)});
+  const clientName=prompt(t?'Nom du client (optionnel):':'Client name (optional):')||'';
+
+  // Ask which photos to include
+  const all=confirm(t?'Inclure toutes les '+importedPhotos.length+' photos ?\n(Annuler pour sélectionner)':'Include all '+importedPhotos.length+' photos?\n(Cancel to select)');
+  const photoCount=all?importedPhotos.length:Math.min(importedPhotos.length,parseInt(prompt(t?'Combien de photos ?':'How many photos?')||importedPhotos.length));
+  const photoNames=importedPhotos.slice(0,photoCount).map(f=>f.name);
+
+  const slug=title.toLowerCase().replace(/[^a-z0-9]/g,'-')+'-'+Date.now().toString(36);
+  galleries.push({title,clientName,photoCount,photoNames,date:new Date().toLocaleDateString(),slug,status:'ACTIVE'});
   localStorage.setItem('ym-galleries',JSON.stringify(galleries));
   renderGalleries();
+
+  // Show share prompt immediately
+  const url='https://ymshots.com/g/'+slug;
+  const copied=navigator.clipboard?.writeText(url);
+  alert((t?'Galerie créée ! Lien copié:\n':'Gallery created! Link copied:\n')+url);
 }
 
 function shareGallery(i){
   const url='https://ymshots.com/g/'+galleries[i].slug;
   navigator.clipboard?.writeText(url);
-  alert((currentLang==='fr'?'Lien copié: ':'Link copied: ')+url);
+  alert((currentLang==='fr'?'Lien copié:\n':'Link copied:\n')+url+'\n\n'+(currentLang==='fr'?'Envoyez ce lien à votre client.':'Send this link to your client.'));
+}
+
+function downloadGalleryZip(i){
+  // In web version, can't create ZIP. Instead download individual photos.
+  alert(currentLang==='fr'?'Téléchargement des photos individuellement...':'Downloading photos individually...');
+  // Export the current imported photos as JPEGs
+  importedPhotos.slice(0,galleries[i].photoCount).forEach((file,idx)=>{
+    if(file.type.startsWith('image/')){
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(file);
+      a.download=file.name;
+      setTimeout(()=>a.click(),idx*500); // Stagger downloads
+    }
+  });
 }
 
 function deleteGallery(i){
