@@ -72,6 +72,30 @@ Conversation so far: ${JSON.stringify(data.history || [])}
 User's message: "${data.message}"`;
         break;
 
+      case 'baby-analyze':
+        prompt = `You are a baby photography specialist AI. Analyze this baby/child photo description and provide enhancement recommendations. Respond in ${lang} as JSON:
+{"ageEstimate":"e.g. 3-6 months","skinTone":"warm/cool/neutral","eyeColor":"brown/blue/etc","suggestions":["enhance eye sparkle","soften skin gently","warm up tones","improve lighting"],"cutenessScore":85,"bestCropSuggestion":"center on face with 30% padding"}
+Photo info: ${JSON.stringify(data)}`;
+        break;
+
+      case 'age-warp':
+        prompt = `You are a facial age analysis AI. Given this person's description, describe what they would look like at ages 5, 25, 50, and 80. Be specific about facial features, skin, hair. Respond in ${lang} as JSON:
+{"currentAge":"estimated current age","predictions":[{"age":5,"description":"..."},{"age":25,"description":"..."},{"age":50,"description":"..."},{"age":80,"description":"..."}]}
+Person description: ${JSON.stringify(data)}`;
+        break;
+
+      case 'family-resemblance':
+        prompt = `You are a family resemblance analysis AI. Compare the described faces and find resemblances. Respond in ${lang} as JSON:
+{"resemblances":[{"feature":"eyes","matchPerson":"mom","confidence":85,"description":"Same almond shape and warm brown color"},{"feature":"smile","matchPerson":"dad","confidence":72,"description":"Similar dimples and lip shape"}],"overallMatch":{"mom":62,"dad":38},"funFact":"a fun observation about the family likeness"}
+Family members: ${JSON.stringify(data)}`;
+        break;
+
+      case 'pet-analyze':
+        prompt = `You are a pet photography specialist AI. Analyze this pet photo description and provide enhancement recommendations. Respond in ${lang} as JSON:
+{"breed":"estimated breed","petType":"dog/cat/other","furType":"short/long/curly","suggestions":["enhance eye clarity","boost fur detail and texture","warm the background","sharpen whiskers"],"cutenessScore":90,"personality":"playful and curious based on expression"}
+Pet info: ${JSON.stringify(data)}`;
+        break;
+
       default:
         return { statusCode: 400, headers, body: '{"error":"Unknown action"}' };
     }
@@ -85,7 +109,7 @@ User's message: "${data.message}"`;
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 500,
+        max_tokens: 800,
         messages: [{ role: 'user', content: prompt }],
       }),
     });

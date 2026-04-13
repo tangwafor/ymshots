@@ -175,6 +175,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;heigh
       <button class="sb-item active" onclick="setView('vault')"><span class="sb-icon">&#9638;</span><span>Library</span></button>
       <button class="sb-item" onclick="setView('edit')"><span class="sb-icon">&#9678;</span><span>Edit</span></button>
       <button class="sb-item" onclick="setView('styleforge')"><span class="sb-icon">&#10024;</span><span>StyleForge</span></button>
+      <div class="sb-section" id="sec-magic">MAGIC</div>
+      <button class="sb-item" onclick="setView('babyglow')"><span class="sb-icon">&#128118;</span><span>BabyGlow</span></button>
+      <button class="sb-item" onclick="setView('agewarp')"><span class="sb-icon">&#9200;</span><span>AgeWarp</span></button>
+      <button class="sb-item" onclick="setView('familytree')"><span class="sb-icon">&#128106;</span><span>FamilyTree</span></button>
+      <button class="sb-item" onclick="setView('timelapse')"><span class="sb-icon">&#127916;</span><span>TimeLapse</span></button>
+      <button class="sb-item" onclick="setView('petportrait')"><span class="sb-icon">&#128054;</span><span>Pet Portrait</span></button>
       <div class="sb-section" id="sec-business">BUSINESS</div>
       <button class="sb-item" onclick="setView('gallery')"><span class="sb-icon">&#9633;</span><span>Galleries</span></button>
       <button class="sb-item" onclick="setView('invoices')"><span class="sb-icon">&#8364;</span><span>Invoices</span></button>
@@ -364,6 +370,127 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;heigh
             <div style="padding:14px 16px;border-radius:8px;background:var(--surface);border:1px solid var(--border)"><div style="font-size:10px;color:var(--muted2);text-transform:uppercase">Invoices</div><div style="font-size:24px;font-weight:700;margin-top:4px" id="statInvoices">0</div></div>
             <div style="padding:14px 16px;border-radius:8px;background:var(--surface);border:1px solid var(--border)"><div style="font-size:10px;color:var(--muted2);text-transform:uppercase">Photos edited</div><div style="font-size:24px;font-weight:700;margin-top:4px" id="statPhotos">0</div></div>
             <div style="padding:14px 16px;border-radius:8px;background:var(--surface);border:1px solid var(--border)"><div style="font-size:10px;color:var(--muted2);text-transform:uppercase">Galleries</div><div style="font-size:24px;font-weight:700;margin-top:4px" id="statGalleries">0</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BABYGLOW -->
+      <div class="view" id="view-babyglow">
+        <div style="display:flex;height:100%">
+          <div style="flex:1;display:flex;flex-direction:column">
+            <div style="padding:12px 16px;border-bottom:1px solid var(--border)">
+              <div style="font-size:16px;font-weight:700">&#128118; BabyGlow</div>
+              <div style="font-size:11px;color:var(--muted)" id="babyglowSub">AI baby photo enhancement. Gentle skin, sparkling eyes, warm tones.</div>
+            </div>
+            <div style="flex:1;display:flex;align-items:center;justify-content:center;position:relative">
+              <canvas id="babyCanvas" style="max-width:90%;max-height:80%;border-radius:4px;display:none"></canvas>
+              <div id="babyPlaceholder" style="text-align:center;color:var(--muted2);padding:40px">
+                <div style="font-size:48px;margin-bottom:16px">&#128118;</div>
+                <div style="font-size:16px;font-weight:600;color:var(--muted);margin-bottom:8px" id="babyTitle">Baby Photo Enhancement</div>
+                <div style="font-size:12px;line-height:1.7;max-width:400px;margin:0 auto" id="babyDesc">Import a baby photo, then BabyGlow will gently enhance skin, brighten eyes, and warm the tones. Designed specifically for newborn and infant photography.</div>
+                <button onclick="loadBabyPhoto()" class="import-btn" style="margin-top:20px" id="babyImportBtn">Select baby photo</button>
+              </div>
+            </div>
+            <div id="babyControls" style="padding:12px 24px;border-top:1px solid var(--border);display:none;align-items:center;gap:16px">
+              <div style="flex:1"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--muted)" id="babySoftLabel">Skin softness</span><span style="color:var(--accent)" id="babySoftVal">50%</span></div><input type="range" id="babySoft" min="0" max="100" value="50" style="width:100%"></div>
+              <div style="flex:1"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--muted)" id="babyEyeLabel">Eye sparkle</span><span style="color:var(--accent)" id="babyEyeVal">60%</span></div><input type="range" id="babyEye" min="0" max="100" value="60" style="width:100%"></div>
+              <div style="flex:1"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--muted)" id="babyWarmLabel">Warmth</span><span style="color:var(--accent)" id="babyWarmVal">40%</span></div><input type="range" id="babyWarm" min="0" max="100" value="40" style="width:100%"></div>
+              <button onclick="downloadBabyPhoto()" style="padding:10px 20px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:600;cursor:pointer" id="babySaveBtn">Save</button>
+            </div>
+            <div id="babyAiResult" style="padding:8px 16px;display:none;font-size:11px;color:var(--accent);border-top:1px solid var(--border)"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AGEWARP -->
+      <div class="view" id="view-agewarp">
+        <div style="padding:24px">
+          <div style="font-size:20px;font-weight:700;margin-bottom:4px">&#9200; AgeWarp</div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:20px" id="agewarpSub">See yourself or your client at any age. Upload a portrait.</div>
+          <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
+            <div style="width:280px">
+              <div id="agewarpUpload" style="padding:40px;border:2px dashed #222;border-radius:8px;text-align:center;cursor:pointer" onclick="loadAgePhoto()">
+                <div style="font-size:32px;margin-bottom:8px">&#128100;</div>
+                <div style="font-size:13px;color:var(--muted)" id="ageUploadText">Upload a portrait</div>
+              </div>
+              <canvas id="ageOriginal" style="width:100%;border-radius:8px;margin-top:12px;display:none"></canvas>
+            </div>
+            <div style="flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:12px" id="ageResults">
+              <div style="text-align:center;padding:20px;border-radius:8px;background:var(--surface);border:1px solid var(--border)"><div style="font-size:24px;font-weight:700;color:var(--accent)">5</div><div style="font-size:10px;color:var(--muted)">years old</div><canvas class="age-canvas" data-age="5" style="width:100%;border-radius:4px;margin-top:8px;display:none"></canvas></div>
+              <div style="text-align:center;padding:20px;border-radius:8px;background:var(--surface);border:1px solid var(--border)"><div style="font-size:24px;font-weight:700;color:var(--accent)">25</div><div style="font-size:10px;color:var(--muted)">years old</div><canvas class="age-canvas" data-age="25" style="width:100%;border-radius:4px;margin-top:8px;display:none"></canvas></div>
+              <div style="text-align:center;padding:20px;border-radius:8px;background:var(--surface);border:1px solid var(--border)"><div style="font-size:24px;font-weight:700;color:var(--accent)">50</div><div style="font-size:10px;color:var(--muted)">years old</div><canvas class="age-canvas" data-age="50" style="width:100%;border-radius:4px;margin-top:8px;display:none"></canvas></div>
+              <div style="text-align:center;padding:20px;border-radius:8px;background:var(--surface);border:1px solid var(--border)"><div style="font-size:24px;font-weight:700;color:var(--accent)">80</div><div style="font-size:10px;color:var(--muted)">years old</div><canvas class="age-canvas" data-age="80" style="width:100%;border-radius:4px;margin-top:8px;display:none"></canvas></div>
+            </div>
+          </div>
+          <div id="ageAiResult" style="margin-top:16px;padding:12px;border-radius:8px;background:var(--surface);border:1px solid var(--border);display:none;font-size:12px;color:var(--muted);line-height:1.6"></div>
+        </div>
+      </div>
+
+      <!-- FAMILYTREE -->
+      <div class="view" id="view-familytree">
+        <div style="padding:24px">
+          <div style="font-size:20px;font-weight:700;margin-bottom:4px">&#128106; FamilyTree</div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:20px" id="familySub">Find family resemblances. Upload photos of family members.</div>
+          <div style="display:flex;gap:16px;margin-bottom:20px">
+            <div style="flex:1;padding:20px;border:2px dashed #222;border-radius:8px;text-align:center;cursor:pointer" onclick="loadFamilyPhoto('parent1')">
+              <div style="font-size:24px;margin-bottom:4px">&#128104;</div>
+              <div style="font-size:11px;color:var(--muted)" id="parent1Label">Parent 1</div>
+              <canvas id="familyParent1" style="width:100%;border-radius:4px;margin-top:8px;display:none"></canvas>
+            </div>
+            <div style="flex:1;padding:20px;border:2px dashed #222;border-radius:8px;text-align:center;cursor:pointer" onclick="loadFamilyPhoto('parent2')">
+              <div style="font-size:24px;margin-bottom:4px">&#128105;</div>
+              <div style="font-size:11px;color:var(--muted)" id="parent2Label">Parent 2</div>
+              <canvas id="familyParent2" style="width:100%;border-radius:4px;margin-top:8px;display:none"></canvas>
+            </div>
+            <div style="flex:1;padding:20px;border:2px dashed #222;border-radius:8px;text-align:center;cursor:pointer" onclick="loadFamilyPhoto('child')">
+              <div style="font-size:24px;margin-bottom:4px">&#128118;</div>
+              <div style="font-size:11px;color:var(--muted)" id="childLabel">Child</div>
+              <canvas id="familyChild" style="width:100%;border-radius:4px;margin-top:8px;display:none"></canvas>
+            </div>
+          </div>
+          <button onclick="analyzeFamilyResemblance()" style="width:100%;padding:12px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer" id="familyAnalyzeBtn">Analyze resemblance</button>
+          <div id="familyResult" style="margin-top:16px;display:none"></div>
+        </div>
+      </div>
+
+      <!-- TIMELAPSE -->
+      <div class="view" id="view-timelapse">
+        <div style="padding:24px">
+          <div style="font-size:20px;font-weight:700;margin-bottom:4px">&#127916; TimeLapse Portrait</div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:20px" id="timelapseSub">Upload photos of the same person over years. Create an age progression.</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px" id="timelapseGrid"></div>
+          <div style="display:flex;gap:12px">
+            <button onclick="addTimelapsePhoto()" class="import-btn" id="tlAddBtn">+ Add photo</button>
+            <button onclick="playTimelapse()" style="padding:10px 20px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;display:none" id="tlPlayBtn">Play TimeLapse</button>
+          </div>
+          <canvas id="timelapseCanvas" style="width:100%;max-width:400px;border-radius:8px;margin-top:16px;display:none"></canvas>
+        </div>
+      </div>
+
+      <!-- PET PORTRAIT -->
+      <div class="view" id="view-petportrait">
+        <div style="display:flex;height:100%">
+          <div style="flex:1;display:flex;flex-direction:column">
+            <div style="padding:12px 16px;border-bottom:1px solid var(--border)">
+              <div style="font-size:16px;font-weight:700">&#128054; Pet Portrait Studio</div>
+              <div style="font-size:11px;color:var(--muted)" id="petSub">AI pet photo enhancement. Eye clarity, fur detail, warm tones.</div>
+            </div>
+            <div style="flex:1;display:flex;align-items:center;justify-content:center">
+              <canvas id="petCanvas" style="max-width:90%;max-height:80%;border-radius:4px;display:none"></canvas>
+              <div id="petPlaceholder" style="text-align:center;color:var(--muted2);padding:40px">
+                <div style="font-size:48px;margin-bottom:16px">&#128054;</div>
+                <div style="font-size:16px;font-weight:600;color:var(--muted);margin-bottom:8px" id="petTitle">Pet Photo Enhancement</div>
+                <div style="font-size:12px;line-height:1.7;max-width:400px;margin:0 auto" id="petDesc">Enhance eye clarity, boost fur texture and detail, warm up the tones. Works for dogs, cats, and all pets.</div>
+                <button onclick="loadPetPhoto()" class="import-btn" style="margin-top:20px" id="petImportBtn">Select pet photo</button>
+              </div>
+            </div>
+            <div id="petControls" style="padding:12px 24px;border-top:1px solid var(--border);display:none;align-items:center;gap:16px">
+              <div style="flex:1"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--muted)">Eye clarity</span><span style="color:var(--accent)" id="petEyeVal">60%</span></div><input type="range" id="petEye" min="0" max="100" value="60" style="width:100%"></div>
+              <div style="flex:1"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--muted)">Fur detail</span><span style="color:var(--accent)" id="petFurVal">50%</span></div><input type="range" id="petFur" min="0" max="100" value="50" style="width:100%"></div>
+              <div style="flex:1"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--muted)">Warmth</span><span style="color:var(--accent)" id="petWarmVal">40%</span></div><input type="range" id="petWarm" min="0" max="100" value="40" style="width:100%"></div>
+              <button onclick="downloadPetPhoto()" style="padding:10px 20px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:600;cursor:pointer">Save</button>
+            </div>
+            <div id="petAiResult" style="padding:8px 16px;display:none;font-size:11px;color:var(--accent);border-top:1px solid var(--border)"></div>
           </div>
         </div>
       </div>
@@ -1219,6 +1346,303 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape')setView('vault');
   if((e.key==='e'||e.key==='E')&&!e.ctrlKey&&!e.metaKey&&document.activeElement.tagName!=='INPUT')setView('edit');
 });
+
+// ═══ BABYGLOW — Baby photo enhancement ═══
+function loadBabyPhoto(){
+  const input=document.createElement('input');input.type='file';input.accept='image/*';
+  input.onchange=()=>{
+    const file=input.files[0];if(!file)return;
+    const img=new Image();
+    img.onload=()=>{
+      const canvas=document.getElementById('babyCanvas');
+      const scale=Math.min(1,800/Math.max(img.width,img.height));
+      canvas.width=img.width*scale;canvas.height=img.height*scale;
+      const ctx=canvas.getContext('2d',{willReadFrequently:true});
+      ctx.drawImage(img,0,0,canvas.width,canvas.height);
+      canvas._original=ctx.getImageData(0,0,canvas.width,canvas.height);
+      canvas.style.display='block';
+      document.getElementById('babyPlaceholder').style.display='none';
+      document.getElementById('babyControls').style.display='flex';
+      applyBabyGlow();
+      // AI analysis
+      callAI('baby-analyze',{fileName:file.name,width:img.width,height:img.height}).then(r=>{
+        document.getElementById('babyAiResult').style.display='block';
+        document.getElementById('babyAiResult').textContent='YM: '+r;
+      });
+    };
+    img.src=URL.createObjectURL(file);
+  };
+  input.click();
+}
+
+function applyBabyGlow(){
+  const canvas=document.getElementById('babyCanvas');
+  const ctx=canvas.getContext('2d');
+  if(!canvas._original)return;
+  const src=canvas._original.data;
+  const out=new Uint8ClampedArray(src.length);
+  const soft=document.getElementById('babySoft').value/100;
+  const eye=document.getElementById('babyEye').value/100;
+  const warm=document.getElementById('babyWarm').value/100;
+
+  for(let i=0;i<src.length;i+=4){
+    let r=src[i],g=src[i+1],b=src[i+2];
+    // Gentle skin smoothing (reduce local contrast)
+    const lum=0.299*r+0.587*g+0.114*b;
+    r=r*(1-soft*0.3)+lum*soft*0.3;
+    g=g*(1-soft*0.3)+lum*soft*0.3;
+    b=b*(1-soft*0.3)+lum*soft*0.3;
+    // Warmth (shift toward warm tones)
+    r=Math.min(255,r*(1+warm*0.15));
+    g=Math.min(255,g*(1+warm*0.05));
+    // Eye sparkle (brighten bright areas)
+    if(lum>180){r=Math.min(255,r+eye*20);g=Math.min(255,g+eye*20);b=Math.min(255,b+eye*20);}
+    // Gentle lift to shadows
+    if(lum<60){r+=15*soft;g+=15*soft;b+=12*soft;}
+    out[i]=Math.max(0,Math.min(255,r));out[i+1]=Math.max(0,Math.min(255,g));out[i+2]=Math.max(0,Math.min(255,b));out[i+3]=src[i+3];
+  }
+  ctx.putImageData(new ImageData(out,canvas.width,canvas.height),0,0);
+}
+
+['babySoft','babyEye','babyWarm'].forEach(id=>{
+  document.getElementById(id)?.addEventListener('input',function(){
+    document.getElementById(id+'Val').textContent=this.value+'%';
+    applyBabyGlow();
+  });
+});
+
+function downloadBabyPhoto(){
+  const canvas=document.getElementById('babyCanvas');
+  const a=document.createElement('a');a.download='ymshots-babyglow-'+Date.now()+'.jpg';
+  a.href=canvas.toDataURL('image/jpeg',0.92);a.click();
+}
+
+// ═══ AGEWARP — Age progression ═══
+function loadAgePhoto(){
+  const input=document.createElement('input');input.type='file';input.accept='image/*';
+  input.onchange=()=>{
+    const file=input.files[0];if(!file)return;
+    const img=new Image();
+    img.onload=()=>{
+      // Show original
+      const orig=document.getElementById('ageOriginal');
+      orig.width=280;orig.height=280*(img.height/img.width);
+      orig.getContext('2d').drawImage(img,0,0,orig.width,orig.height);
+      orig.style.display='block';
+      document.getElementById('agewarpUpload').style.display='none';
+
+      // Generate age variations using Canvas filters
+      const ages=[5,25,50,80];
+      document.querySelectorAll('.age-canvas').forEach(c=>{
+        const age=parseInt(c.dataset.age);
+        c.width=200;c.height=200*(img.height/img.width);
+        const ctx=c.getContext('2d');
+        ctx.drawImage(img,0,0,c.width,c.height);
+        const imageData=ctx.getImageData(0,0,c.width,c.height);
+        const d=imageData.data;
+
+        if(age===5){
+          // Younger: softer, brighter, rounder feel
+          for(let i=0;i<d.length;i+=4){d[i]=Math.min(255,d[i]*1.05+10);d[i+1]=Math.min(255,d[i+1]*1.05+10);d[i+2]=Math.min(255,d[i+2]*1.05+12);}
+        } else if(age===25){
+          // Prime: sharpen slightly, vivid
+          for(let i=0;i<d.length;i+=4){const lum=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];d[i]=lum+(d[i]-lum)*1.15;d[i+1]=lum+(d[i+1]-lum)*1.15;d[i+2]=lum+(d[i+2]-lum)*1.15;}
+        } else if(age===50){
+          // Older: slightly desaturated, warm, reduced contrast
+          for(let i=0;i<d.length;i+=4){const lum=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];d[i]=lum+(d[i]-lum)*0.85+5;d[i+1]=lum+(d[i+1]-lum)*0.85;d[i+2]=lum+(d[i+2]-lum)*0.8-3;}
+        } else if(age===80){
+          // Elderly: desaturated, lower contrast, warm highlights, softer
+          for(let i=0;i<d.length;i+=4){const lum=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];d[i]=lum+(d[i]-lum)*0.6+10;d[i+1]=lum+(d[i+1]-lum)*0.6+5;d[i+2]=lum+(d[i+2]-lum)*0.5;d[i]+=Math.random()*8;d[i+1]+=Math.random()*6;d[i+2]+=Math.random()*4;}
+        }
+        ctx.putImageData(imageData,0,0);
+        c.style.display='block';
+      });
+
+      // AI analysis
+      callAI('age-warp',{fileName:file.name}).then(r=>{
+        const el=document.getElementById('ageAiResult');
+        el.style.display='block';el.innerHTML='<strong style="color:var(--accent)">YM Analysis:</strong> '+r;
+      });
+    };
+    img.src=URL.createObjectURL(file);
+  };
+  input.click();
+}
+
+// ═══ FAMILYTREE — Resemblance analysis ═══
+let familyPhotos={parent1:null,parent2:null,child:null};
+function loadFamilyPhoto(role){
+  const input=document.createElement('input');input.type='file';input.accept='image/*';
+  input.onchange=()=>{
+    const file=input.files[0];if(!file)return;
+    familyPhotos[role]=file;
+    const img=new Image();
+    img.onload=()=>{
+      const canvas=document.getElementById('family'+role.charAt(0).toUpperCase()+role.slice(1));
+      canvas.width=200;canvas.height=200*(img.height/img.width);
+      canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+      canvas.style.display='block';
+    };
+    img.src=URL.createObjectURL(file);
+  };
+  input.click();
+}
+
+function analyzeFamilyResemblance(){
+  const loaded=Object.values(familyPhotos).filter(f=>f);
+  if(loaded.length<2){alert(currentLang==='fr'?'Chargez au moins 2 photos.':'Upload at least 2 photos.');return;}
+
+  const resultDiv=document.getElementById('familyResult');
+  resultDiv.style.display='block';
+  resultDiv.innerHTML='<div style="text-align:center;color:var(--accent);padding:16px">Analyzing resemblances...</div>';
+
+  callAI('family-resemblance',{
+    members:Object.entries(familyPhotos).filter(([k,v])=>v).map(([k,v])=>({role:k,fileName:v.name}))
+  }).then(r=>{
+    try{
+      const data=JSON.parse(r);
+      let html='<div style="padding:16px;border-radius:8px;background:var(--surface);border:1px solid var(--border)">';
+      html+='<div style="font-size:14px;font-weight:700;color:var(--accent);margin-bottom:12px">'+(currentLang==='fr'?'Analyse de ressemblance':'Resemblance Analysis')+'</div>';
+      if(data.resemblances){
+        data.resemblances.forEach(r=>{
+          html+='<div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">';
+          html+='<div><strong style="color:var(--text)">'+r.feature+'</strong> <span style="color:var(--muted)">'+r.description+'</span></div>';
+          html+='<div style="padding:2px 8px;border-radius:4px;background:rgba(224,148,58,0.15);color:var(--accent);font-size:11px;font-weight:600">'+r.confidence+'%</div>';
+          html+='</div>';
+        });
+      }
+      if(data.overallMatch){
+        html+='<div style="margin-top:12px;display:flex;gap:16px">';
+        Object.entries(data.overallMatch).forEach(([k,v])=>{
+          html+='<div style="flex:1;text-align:center;padding:8px;border-radius:6px;background:var(--bg)"><div style="font-size:20px;font-weight:700;color:var(--accent)">'+v+'%</div><div style="font-size:10px;color:var(--muted)">'+k+'</div></div>';
+        });
+        html+='</div>';
+      }
+      if(data.funFact)html+='<div style="margin-top:12px;padding:8px 12px;border-radius:6px;background:rgba(224,148,58,0.08);font-size:12px;color:var(--muted)">'+data.funFact+'</div>';
+      html+='</div>';
+      resultDiv.innerHTML=html;
+    }catch{resultDiv.innerHTML='<div style="padding:16px;border-radius:8px;background:var(--surface);border:1px solid var(--border);color:var(--muted);font-size:12px">'+r+'</div>';}
+  });
+}
+
+// ═══ TIMELAPSE — Portrait age progression ═══
+let timelapsePhotos=[];
+function addTimelapsePhoto(){
+  const input=document.createElement('input');input.type='file';input.accept='image/*';
+  input.onchange=()=>{
+    const file=input.files[0];if(!file)return;
+    timelapsePhotos.push(file);
+    const grid=document.getElementById('timelapseGrid');
+    const div=document.createElement('div');
+    div.style.cssText='width:100px;height:100px;border-radius:6px;overflow:hidden;position:relative;border:1px solid var(--border)';
+    const img=document.createElement('img');
+    img.style.cssText='width:100%;height:100%;object-fit:cover';
+    img.src=URL.createObjectURL(file);
+    const label=document.createElement('div');
+    label.style.cssText='position:absolute;bottom:2px;left:2px;font-size:9px;color:#fff;background:rgba(0,0,0,0.6);padding:1px 4px;border-radius:2px';
+    label.textContent='#'+(timelapsePhotos.length);
+    div.appendChild(img);div.appendChild(label);grid.appendChild(div);
+    if(timelapsePhotos.length>=2)document.getElementById('tlPlayBtn').style.display='inline-block';
+  };
+  input.click();
+}
+
+function playTimelapse(){
+  if(timelapsePhotos.length<2)return;
+  const canvas=document.getElementById('timelapseCanvas');
+  const ctx=canvas.getContext('2d');
+  canvas.style.display='block';
+  let idx=0;
+
+  function showNext(){
+    const img=new Image();
+    img.onload=()=>{
+      canvas.width=400;canvas.height=400*(img.height/img.width);
+      // Crossfade effect
+      ctx.globalAlpha=0;
+      const fade=setInterval(()=>{
+        ctx.globalAlpha=Math.min(1,ctx.globalAlpha+0.05);
+        ctx.drawImage(img,0,0,canvas.width,canvas.height);
+        if(ctx.globalAlpha>=1){clearInterval(fade);setTimeout(()=>{idx=(idx+1)%timelapsePhotos.length;showNext();},1500);}
+      },30);
+    };
+    img.src=URL.createObjectURL(timelapsePhotos[idx]);
+  }
+  showNext();
+}
+
+// ═══ PET PORTRAIT — Pet enhancement ═══
+function loadPetPhoto(){
+  const input=document.createElement('input');input.type='file';input.accept='image/*';
+  input.onchange=()=>{
+    const file=input.files[0];if(!file)return;
+    const img=new Image();
+    img.onload=()=>{
+      const canvas=document.getElementById('petCanvas');
+      const scale=Math.min(1,800/Math.max(img.width,img.height));
+      canvas.width=img.width*scale;canvas.height=img.height*scale;
+      const ctx=canvas.getContext('2d',{willReadFrequently:true});
+      ctx.drawImage(img,0,0,canvas.width,canvas.height);
+      canvas._original=ctx.getImageData(0,0,canvas.width,canvas.height);
+      canvas.style.display='block';
+      document.getElementById('petPlaceholder').style.display='none';
+      document.getElementById('petControls').style.display='flex';
+      applyPetEnhance();
+      callAI('pet-analyze',{fileName:file.name,width:img.width,height:img.height}).then(r=>{
+        document.getElementById('petAiResult').style.display='block';
+        document.getElementById('petAiResult').textContent='YM: '+r;
+      });
+    };
+    img.src=URL.createObjectURL(file);
+  };
+  input.click();
+}
+
+function applyPetEnhance(){
+  const canvas=document.getElementById('petCanvas');
+  const ctx=canvas.getContext('2d');
+  if(!canvas._original)return;
+  const src=canvas._original.data;
+  const out=new Uint8ClampedArray(src.length);
+  const eyeClarity=document.getElementById('petEye').value/100;
+  const furDetail=document.getElementById('petFur').value/100;
+  const warmth=document.getElementById('petWarm').value/100;
+
+  for(let i=0;i<src.length;i+=4){
+    let r=src[i],g=src[i+1],b=src[i+2];
+    const lum=0.299*r+0.587*g+0.114*b;
+    // Fur detail: boost local contrast (sharpen)
+    const sharp=1+furDetail*0.3;
+    r=lum+(r-lum)*sharp;g=lum+(g-lum)*sharp;b=lum+(b-lum)*sharp;
+    // Eye clarity: brighten highlights
+    if(lum>160){r=Math.min(255,r+eyeClarity*25);g=Math.min(255,g+eyeClarity*25);b=Math.min(255,b+eyeClarity*25);}
+    // Warmth
+    r=Math.min(255,r*(1+warmth*0.12));g=Math.min(255,g*(1+warmth*0.04));
+    // Vibrance boost for fur colors
+    const maxC=Math.max(r,g,b),minC=Math.min(r,g,b);
+    const sat=maxC>0?(maxC-minC)/maxC:0;
+    const boost=0.2*(1-sat)*furDetail;
+    r=lum+(r-lum)*(1+boost);g=lum+(g-lum)*(1+boost);b=lum+(b-lum)*(1+boost);
+    out[i]=Math.max(0,Math.min(255,r));out[i+1]=Math.max(0,Math.min(255,g));out[i+2]=Math.max(0,Math.min(255,b));out[i+3]=src[i+3];
+  }
+  ctx.putImageData(new ImageData(out,canvas.width,canvas.height),0,0);
+}
+
+['petEye','petFur','petWarm'].forEach(id=>{
+  document.getElementById(id)?.addEventListener('input',function(){
+    document.getElementById(id+'Val').textContent=this.value+'%';
+    applyPetEnhance();
+  });
+});
+
+function downloadPetPhoto(){
+  const canvas=document.getElementById('petCanvas');
+  const a=document.createElement('a');a.download='ymshots-pet-'+Date.now()+'.jpg';
+  a.href=canvas.toDataURL('image/jpeg',0.92);a.click();
+}
+
+// Add new views to nav
+viewLabels.babyglow='BabyGlow';viewLabels.agewarp='AgeWarp';viewLabels.familytree='FamilyTree';viewLabels.timelapse='TimeLapse';viewLabels.petportrait='Pet Portrait';
 
 // Init all sections
 renderSfGrid();
