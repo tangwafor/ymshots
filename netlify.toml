@@ -31,6 +31,12 @@
   to = "/.netlify/functions/ai"
   status = 200
 
+# StyleForge AI
+[[redirects]]
+  from = "/styleforge"
+  to = "/.netlify/functions/styleforge"
+  status = 200
+
 # Notifications/analytics
 [[redirects]]
   from = "/notify"

@@ -1021,14 +1021,61 @@ function applyStyleForge(effect,btn){
 
   const canvas=document.getElementById('sfCanvas');
   const ctx=canvas.getContext('2d');
+
+  // Show loading state
+  canvas.style.display='none';
+  document.getElementById('sfPlaceholder').style.display='block';
+  document.getElementById('sfPlaceholder').innerHTML='<div style="color:var(--accent)">&#9881; '+(currentLang==='fr'?'Transformation IA en cours...':'AI transformation in progress...')+'</div><div style="font-size:11px;color:var(--muted2);margin-top:8px">'+(currentLang==='fr'?'Cela prend 5-15 secondes':'This takes 5-15 seconds')+'</div>';
+  document.getElementById('sfControls').style.display='none';
+
+  // Try AI API first, fall back to Canvas
+  const intensity=document.getElementById('sfIntensity').value/100;
+  getImageBase64(currentEditFile,512).then(b64=>{
+    fetch('/styleforge',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({effect:effect.id,imageBase64:b64,intensity})
+    }).then(r=>r.json()).then(data=>{
+      if(data.image){
+        // AI result — display it
+        const aiImg=new Image();
+        aiImg.onload=()=>{
+          canvas.width=aiImg.width;canvas.height=aiImg.height;
+          ctx.drawImage(aiImg,0,0);
+          canvas.style.display='block';
+          document.getElementById('sfPlaceholder').style.display='none';
+          document.getElementById('sfControls').style.display='flex';
+        };
+        aiImg.src='data:image/jpeg;base64,'+data.image;
+      } else {
+        // AI failed — fall back to Canvas processing
+        console.log('AI unavailable, using Canvas fallback:',data.error);
+        applyStyleForgeCanvas(effect,intensity);
+      }
+    }).catch(()=>{
+      applyStyleForgeCanvas(effect,intensity);
+    });
+  });
+
+  // Get AI description
+  callAI('style-describe',{effect:effect.name}).then(desc=>{
+    if(desc)document.getElementById('sfAiDesc').textContent=desc,document.getElementById('sfAiDesc').style.display='block';
+  });
+}
+
+// Canvas fallback when AI API is unavailable
+function applyStyleForgeCanvas(effect,intensity){
+  const canvas=document.getElementById('sfCanvas');
+  const ctx=canvas.getContext('2d');
   const img=new Image();
   img.onload=()=>{
-    canvas.width=Math.min(img.width,800);
-    canvas.height=Math.min(img.height,600);
-    const scale=Math.min(canvas.width/img.width,canvas.height/img.height);
-    canvas.width=img.width*scale;
-    canvas.height=img.height*scale;
+    const scale=Math.min(1,800/Math.max(img.width,img.height));
+    canvas.width=Math.round(img.width*scale);
+    canvas.height=Math.round(img.height*scale);
     ctx.drawImage(img,0,0,canvas.width,canvas.height);
+    canvas.style.display='block';
+    document.getElementById('sfPlaceholder').style.display='none';
+    document.getElementById('sfControls').style.display='flex';
 
     // Apply real Canvas effect
     const imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
