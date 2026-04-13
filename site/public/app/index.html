@@ -695,82 +695,99 @@ function applyEditsToPreview(){
   const len=src.length;
   const E=editState;
 
-  // Pre-compute adjustment values
-  const expMul=Math.pow(2,E.exposure);
-  const conFactor=(259*(E.contrast+255))/(255*(259-E.contrast));
-  const satFactor=1+E.saturation/100;
-  const vibFactor=E.vibrance/100;
-  const tempShift=(E.temperature-5500)/5000;
-  const tintShift=E.tint/150;
-  const hlAdj=E.highlights/200;
-  const shAdj=E.shadows/200;
-  const whAdj=E.whites/400;
-  const blAdj=E.blacks/400;
-  const clarityAmt=E.clarity/100;
-  const grainAmt=E.grain/100*0.15;
-
   for(let i=0;i<len;i+=4){
-    let r=src[i]/255, g=src[i+1]/255, b=src[i+2]/255;
+    let r=src[i], g=src[i+1], b=src[i+2];
 
-    // 1. Exposure (multiply in linear-ish space)
-    r*=expMul; g*=expMul; b*=expMul;
-
-    // 2. Temperature (shift R/B)
-    r*=(1+tempShift*0.4);
-    b*=(1-tempShift*0.4);
-    g*=(1-tintShift*0.2);
-
-    // 3. Highlights/Shadows/Whites/Blacks
-    const lum=0.2126*r+0.7152*g+0.0722*b;
-    if(lum>0.5){
-      const hlMul=1+hlAdj*(lum-0.5)*2;
-      r*=hlMul;g*=hlMul;b*=hlMul;
-    } else {
-      const shMul=1+shAdj*(0.5-lum)*2;
-      r*=shMul;g*=shMul;b*=shMul;
+    // 1. Exposure: multiply brightness (±5 stops)
+    if(E.exposure!==0){
+      const mul=Math.pow(2,E.exposure);
+      r*=mul;g*=mul;b*=mul;
     }
-    const whMul=1+whAdj*lum;
-    const blMul=1+blAdj*(1-lum);
-    r*=whMul*blMul; g*=whMul*blMul; b*=whMul*blMul;
 
-    // 4. Contrast (S-curve around 0.5)
-    r=(r-0.5)*conFactor/128+0.5;
-    g=(g-0.5)*conFactor/128+0.5;
-    b=(b-0.5)*conFactor/128+0.5;
+    // 2. Temperature: warm(+) shifts R up B down, cool(-) opposite
+    if(E.temperature!==5500){
+      const t=(E.temperature-5500)/5000;
+      r=r*(1+t*0.4);
+      b=b*(1-t*0.4);
+    }
 
-    // 5. Vibrance (boost low-saturation pixels more)
-    const maxC=Math.max(r,g,b), minC=Math.min(r,g,b);
-    const curSat=maxC>0?(maxC-minC)/maxC:0;
-    const vibBoost=vibFactor*(1-curSat);
-    const lum2=0.2126*r+0.7152*g+0.0722*b;
-    r=lum2+(r-lum2)*(1+vibBoost);
-    g=lum2+(g-lum2)*(1+vibBoost);
-    b=lum2+(b-lum2)*(1+vibBoost);
+    // 3. Tint: shifts green/magenta
+    if(E.tint!==0){
+      g=g*(1-E.tint/300);
+    }
 
-    // 6. Saturation (uniform)
-    const lum3=0.2126*r+0.7152*g+0.0722*b;
-    r=lum3+(r-lum3)*satFactor;
-    g=lum3+(g-lum3)*satFactor;
-    b=lum3+(b-lum3)*satFactor;
+    // 4. Highlights: affect bright areas (lum > 128)
+    const lum=0.299*r+0.587*g+0.114*b;
+    if(E.highlights!==0&&lum>128){
+      const factor=1+E.highlights/100*(lum-128)/127;
+      r*=factor;g*=factor;b*=factor;
+    }
 
-    // 7. Clarity (local contrast boost — simplified as midtone contrast)
-    if(clarityAmt!==0){
-      const mid=0.5;
-      const dist=lum3-mid;
-      const boost=clarityAmt*dist*0.5;
+    // 5. Shadows: affect dark areas (lum < 128)
+    if(E.shadows!==0&&lum<128){
+      const lift=E.shadows/100*(128-lum)/128*50;
+      r+=lift;g+=lift;b+=lift;
+    }
+
+    // 6. Whites: push the top end
+    if(E.whites!==0){
+      const wf=E.whites/100*0.3;
+      r+=r*wf;g+=g*wf;b+=b*wf;
+    }
+
+    // 7. Blacks: lift or crush the bottom end
+    if(E.blacks!==0){
+      const bf=E.blacks/100*30;
+      r+=bf;g+=bf;b+=bf;
+    }
+
+    // 8. Contrast: S-curve around midpoint
+    if(E.contrast!==0){
+      const cf=1+E.contrast/50;
+      r=(r-128)*cf+128;
+      g=(g-128)*cf+128;
+      b=(b-128)*cf+128;
+    }
+
+    // 9. Clarity: midtone local contrast
+    if(E.clarity!==0){
+      const cl=E.clarity/100;
+      const mid=128;
+      const dist=(lum-mid)/128;
+      const boost=cl*dist*40;
       r+=boost;g+=boost;b+=boost;
     }
 
-    // 8. Grain (noise)
-    if(grainAmt>0){
-      const noise=(Math.random()-0.5)*grainAmt;
+    // 10. Vibrance: boost low-saturation more
+    if(E.vibrance!==0){
+      const lum2=0.299*r+0.587*g+0.114*b;
+      const maxC=Math.max(r,g,b),minC=Math.min(r,g,b);
+      const curSat=maxC>0?(maxC-minC)/maxC:0;
+      const vb=E.vibrance/100*(1-curSat);
+      r=lum2+(r-lum2)*(1+vb);
+      g=lum2+(g-lum2)*(1+vb);
+      b=lum2+(b-lum2)*(1+vb);
+    }
+
+    // 11. Saturation: uniform boost/reduce
+    if(E.saturation!==0){
+      const lum3=0.299*r+0.587*g+0.114*b;
+      const sf=1+E.saturation/100;
+      r=lum3+(r-lum3)*sf;
+      g=lum3+(g-lum3)*sf;
+      b=lum3+(b-lum3)*sf;
+    }
+
+    // 12. Grain: random noise
+    if(E.grain>0){
+      const noise=(Math.random()-0.5)*E.grain*0.5;
       r+=noise;g+=noise;b+=noise;
     }
 
-    // Clamp and write
-    out[i]=Math.max(0,Math.min(255,r*255))|0;
-    out[i+1]=Math.max(0,Math.min(255,g*255))|0;
-    out[i+2]=Math.max(0,Math.min(255,b*255))|0;
+    // Clamp 0-255 and write
+    out[i]=r<0?0:r>255?255:r|0;
+    out[i+1]=g<0?0:g>255?255:g|0;
+    out[i+2]=b<0?0:b>255?255:b|0;
     out[i+3]=src[i+3];
   }
 
