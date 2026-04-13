@@ -7,8 +7,8 @@ import type { Handler } from '@netlify/functions';
  * 3. Log client-side errors
  * 4. Check for overdue invoices
  */
-const SUPABASE_URL = process.env.SUPABASE_URL || '';
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://heckailuvcwmnfdtubhd.supabase.co';
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhlY2thaWx1dmN3bW5mZHR1YmhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwMDc2NDYsImV4cCI6MjA5MTU4MzY0Nn0.6D1J6AGngSLZPWcOEPM61iY-XDlZwKHC6erSgexDsYI';
 const OWNER_EMAIL = 'vangwafor3@yahoo.com';
 
 async function supabasePost(table: string, data: any) {

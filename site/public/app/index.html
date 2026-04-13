@@ -2155,8 +2155,24 @@ function generateAIBackdrop(scene){
 
   fetch('/backdrop',{
     method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({prompt:scene,width:c.width,height:c.height})
-  }).then(r=>r.json()).then(data=>{
+    body:JSON.stringify({prompt:scene})
+  }).then(r=>r.json()).then(async data=>{
+    // If server returned a poll URL, poll from client side
+    if(data.pollUrl&&!data.image){
+      for(let i=0;i<15;i++){
+        await new Promise(r=>setTimeout(r,2000));
+        try{
+          const poll=await fetch(data.pollUrl,{headers:{'Authorization':'Bearer '+('r8_8xz')}}).then(r=>r.json());
+          if(poll.status==='succeeded'&&poll.output?.[0]){
+            const imgR=await fetch(poll.output[0]);
+            const buf=await imgR.arrayBuffer();
+            const b=btoa(String.fromCharCode(...new Uint8Array(buf)));
+            data={image:b};break;
+          }
+          if(poll.status==='failed')break;
+        }catch{break;}
+      }
+    }
     if(data.image){
       const bgImg=new Image();
       bgImg.onload=()=>{
