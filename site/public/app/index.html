@@ -810,110 +810,186 @@ function resetSliders(){
 document.querySelector('.edit-panel button[style*="border"]')?.addEventListener('click',resetAllEdits);
 
 // ─── Per-pixel processing engine ───
+// ═══ COLOR SCIENCE HELPERS (Lightroom-quality) ═══
+const srgbToLinear=c=>c<=0.04045?c/12.92:Math.pow((c+0.055)/1.055,2.4);
+const linearToSrgb=c=>c<=0.0031308?c*12.92:1.055*Math.pow(c,1/2.4)-0.055;
+function rgbToOklab(r,g,b){
+  let l=0.4122214708*r+0.5363325363*g+0.0514459929*b;
+  let m=0.2119034982*r+0.6806995451*g+0.1073969566*b;
+  let s=0.0883024619*r+0.2817188376*g+0.6299787005*b;
+  l=Math.cbrt(l);m=Math.cbrt(m);s=Math.cbrt(s);
+  return[0.2104542553*l+0.7936177850*m-0.0040720468*s,1.9779984951*l-2.4285922050*m+0.4505937099*s,0.0259040371*l+0.7827717662*m-0.8086757660*s];
+}
+function oklabToRgb(L,a,b){
+  let l=L+0.3963377774*a+0.2158037573*b;
+  let m=L-0.1055613458*a-0.0638541728*b;
+  let s=L-0.0894841775*a-1.2914855480*b;
+  l=l*l*l;m=m*m*m;s=s*s*s;
+  return[+4.0767416621*l-3.3077115913*m+0.2309699292*s,-1.2684380046*l+2.6097574011*m-0.3413193965*s,-0.0041960863*l-0.7034186147*m+1.7076147010*s];
+}
+function smoothstep(edge0,edge1,x){const t=Math.max(0,Math.min(1,(x-edge0)/(edge1-edge0)));return t*t*(3-2*t);}
+function clampF(v){return v<0?0:v>1?1:v;}
+
+// Pre-compute blur for clarity (box blur on luminance)
+let blurredL=null;
+function computeBlurredLuminance(src,w,h){
+  const L=new Float32Array(w*h);
+  for(let i=0;i<w*h;i++){
+    const r=srgbToLinear(src[i*4]/255),g=srgbToLinear(src[i*4+1]/255),b=srgbToLinear(src[i*4+2]/255);
+    const[oL]=rgbToOklab(r,g,b);
+    L[i]=oL;
+  }
+  // Box blur radius 20
+  const rad=20,out=new Float32Array(w*h);
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    let sum=0,cnt=0;
+    for(let ky=Math.max(0,y-rad);ky<=Math.min(h-1,y+rad);ky+=3)
+      for(let kx=Math.max(0,x-rad);kx<=Math.min(w-1,x+rad);kx+=3){sum+=L[ky*w+kx];cnt++;}
+    out[y*w+x]=sum/cnt;
+  }
+  return{L,blurred:out};
+}
+
 function applyEditsToPreview(){
   if(!originalImageData||!editCtx)return;
   const src=originalImageData.data;
+  const w=originalImageData.width,h=originalImageData.height;
   const out=new Uint8ClampedArray(src.length);
-  const len=src.length;
   const E=editState;
 
-  for(let i=0;i<len;i+=4){
-    let r=src[i], g=src[i+1], b=src[i+2];
+  // Pre-compute luminance blur for clarity (only when clarity != 0)
+  let lumData=null;
+  if(E.clarity!==0&&!blurredL){
+    blurredL=computeBlurredLuminance(src,w,h);
+  }
+  if(E.clarity===0)blurredL=null;
+  lumData=blurredL;
 
-    // 1. Exposure: multiply brightness (±5 stops)
-    if(E.exposure!==0){
-      const mul=Math.pow(2,E.exposure);
-      r*=mul;g*=mul;b*=mul;
+  const expMul=Math.pow(2,E.exposure);
+  const tempShift=(E.temperature-5500)/5000;
+  const tintShift=E.tint/150;
+
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const i=(y*w+x)*4;
+
+    // Step 1: sRGB → Linear
+    let r=srgbToLinear(src[i]/255);
+    let g=srgbToLinear(src[i+1]/255);
+    let b=srgbToLinear(src[i+2]/255);
+
+    // Step 2: Exposure (in linear light — correct gamma response)
+    r*=expMul;g*=expMul;b*=expMul;
+
+    // Step 3: Temperature (Kelvin-based R/B shift in linear)
+    if(tempShift!==0){
+      r*=(1+tempShift*0.5);
+      b*=(1-tempShift*0.5);
     }
 
-    // 2. Temperature: warm(+) shifts R up B down, cool(-) opposite
-    if(E.temperature!==5500){
-      const t=(E.temperature-5500)/5000;
-      r=r*(1+t*0.4);
-      b=b*(1-t*0.4);
+    // Step 4: Tint (green/magenta on G channel)
+    if(tintShift!==0){
+      g*=(1-tintShift*0.3);
     }
 
-    // 3. Tint: shifts green/magenta
-    if(E.tint!==0){
-      g=g*(1-E.tint/300);
+    // Step 5: Convert to OKLab for perceptual adjustments
+    let[L,okA,okB]=rgbToOklab(Math.max(0,r),Math.max(0,g),Math.max(0,b));
+
+    // Step 6: Highlights (smooth targeting of bright areas)
+    if(E.highlights!==0){
+      const mask=smoothstep(0.5,1.0,L);
+      L+=E.highlights/100*mask*(1-L)*0.6;
     }
 
-    // 4. Highlights: affect bright areas (lum > 128)
-    const lum=0.299*r+0.587*g+0.114*b;
-    if(E.highlights!==0&&lum>128){
-      const factor=1+E.highlights/100*(lum-128)/127;
-      r*=factor;g*=factor;b*=factor;
+    // Step 7: Shadows (smooth targeting of dark areas)
+    if(E.shadows!==0){
+      const mask=1-smoothstep(0.0,0.5,L);
+      L+=E.shadows/100*mask*L*0.6;
     }
 
-    // 5. Shadows: affect dark areas (lum < 128)
-    if(E.shadows!==0&&lum<128){
-      const lift=E.shadows/100*(128-lum)/128*50;
-      r+=lift;g+=lift;b+=lift;
-    }
-
-    // 6. Whites: push the top end
+    // Step 8: Whites (push top 20%)
     if(E.whites!==0){
-      const wf=E.whites/100*0.3;
-      r+=r*wf;g+=g*wf;b+=b*wf;
+      const mask=smoothstep(0.8,1.0,L);
+      L+=E.whites/100*mask*0.3;
     }
 
-    // 7. Blacks: lift or crush the bottom end
+    // Step 9: Blacks (lift/crush bottom 20%)
     if(E.blacks!==0){
-      const bf=E.blacks/100*30;
-      r+=bf;g+=bf;b+=bf;
+      const mask=1-smoothstep(0.0,0.2,L);
+      L+=E.blacks/100*mask*0.3;
     }
 
-    // 8. Contrast: S-curve around midpoint
+    // Step 10: Contrast (S-curve via cubic, NOT linear)
     if(E.contrast!==0){
-      const cf=1+E.contrast/50;
-      r=(r-128)*cf+128;
-      g=(g-128)*cf+128;
-      b=(b-128)*cf+128;
+      const amt=E.contrast/100;
+      const mid=0.5;
+      L=mid+(L-mid)*(1+amt*(1-Math.pow(2*Math.abs(L-mid),2)));
     }
 
-    // 9. Clarity: midtone local contrast
-    if(E.clarity!==0){
-      const cl=E.clarity/100;
-      const mid=128;
-      const dist=(lum-mid)/128;
-      const boost=cl*dist*40;
-      r+=boost;g+=boost;b+=boost;
+    // Step 11: Clarity (midtone-targeted local contrast)
+    if(E.clarity!==0&&lumData){
+      const pixIdx=y*w+x;
+      const localContrast=lumData.L[pixIdx]-lumData.blurred[pixIdx];
+      const midtoneMask=1-2*Math.abs(L-0.5);
+      L+=E.clarity/100*localContrast*midtoneMask*2;
     }
 
-    // 10. Vibrance: boost low-saturation more
+    // Step 12: Vibrance (protect already-saturated colors)
     if(E.vibrance!==0){
-      const lum2=0.299*r+0.587*g+0.114*b;
-      const maxC=Math.max(r,g,b),minC=Math.min(r,g,b);
-      const curSat=maxC>0?(maxC-minC)/maxC:0;
-      const vb=E.vibrance/100*(1-curSat);
-      r=lum2+(r-lum2)*(1+vb);
-      g=lum2+(g-lum2)*(1+vb);
-      b=lum2+(b-lum2)*(1+vb);
+      const chroma=Math.sqrt(okA*okA+okB*okB);
+      const dampening=1-Math.pow(Math.min(1,chroma/0.35),0.5);
+      const boost=1+E.vibrance/100*dampening;
+      okA*=boost;okB*=boost;
     }
 
-    // 11. Saturation: uniform boost/reduce
+    // Step 13: Saturation (uniform chroma scale)
     if(E.saturation!==0){
-      const lum3=0.299*r+0.587*g+0.114*b;
       const sf=1+E.saturation/100;
-      r=lum3+(r-lum3)*sf;
-      g=lum3+(g-lum3)*sf;
-      b=lum3+(b-lum3)*sf;
+      okA*=sf;okB*=sf;
     }
 
-    // 12. Grain: random noise
+    // Step 14: Clamp L and convert back to linear RGB
+    L=clampF(L);
+    let[rr,gg,bb]=oklabToRgb(L,okA,okB);
+
+    // Step 15: Sharpening (unsharp mask on luminance — simplified)
+    if(E.sharpening>0&&x>0&&x<w-1&&y>0&&y<h-1){
+      const cL=0.2126*rr+0.7152*gg+0.0722*bb;
+      const nL=0.2126*srgbToLinear(src[((y-1)*w+x)*4]/255)+0.7152*srgbToLinear(src[((y-1)*w+x)*4+1]/255)+0.0722*srgbToLinear(src[((y-1)*w+x)*4+2]/255);
+      const detail=cL-nL;
+      const sharpAmt=E.sharpening/150*2;
+      rr+=detail*sharpAmt;gg+=detail*sharpAmt;bb+=detail*sharpAmt;
+    }
+
+    // Step 16: Grain (luminance-based — coarser in shadows, finer in highlights)
     if(E.grain>0){
-      const noise=(Math.random()-0.5)*E.grain*0.5;
-      r+=noise;g+=noise;b+=noise;
+      let grainScale=E.grain/100*0.08;
+      if(L<0.3)grainScale*=1.5;
+      else if(L>0.7)grainScale*=0.5;
+      const noise=(Math.random()-0.5)*grainScale;
+      rr+=noise;gg+=noise;bb+=noise;
     }
 
-    // Clamp 0-255 and write
-    out[i]=r<0?0:r>255?255:r|0;
-    out[i+1]=g<0?0:g>255?255:g|0;
-    out[i+2]=b<0?0:b>255?255:b|0;
+    // Step 17: Vignette
+    if(E.vignette&&E.vignette>0){
+      const dx=(x/w-0.5)*2,dy=(y/h-0.5)*2;
+      const dist=Math.sqrt(dx*dx+dy*dy);
+      const vf=1-E.vignette/100*smoothstep(0.4,1.2,dist);
+      rr*=vf;gg*=vf;bb*=vf;
+    }
+
+    // Step 18: Linear → sRGB → 0-255
+    rr=linearToSrgb(clampF(rr));
+    gg=linearToSrgb(clampF(gg));
+    bb=linearToSrgb(clampF(bb));
+
+    out[i]=(rr*255+0.5)|0;
+    out[i+1]=(gg*255+0.5)|0;
+    out[i+2]=(bb*255+0.5)|0;
     out[i+3]=src[i+3];
   }
 
-  editCtx.putImageData(new ImageData(out,originalImageData.width,originalImageData.height),0,0);
+  editCtx.putImageData(new ImageData(out,w,h),0,0);
+}
 }
 
 // Wire sliders to real processing
