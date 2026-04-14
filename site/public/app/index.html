@@ -308,6 +308,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;heigh
 
       <!-- EDIT -->
       <div class="view" id="view-edit">
+        <!-- One-tap presets bar -->
+        <div id="presetsBar" style="display:none;padding:8px 12px;border-bottom:1px solid var(--border);overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch">
+          <span style="font-size:10px;color:var(--muted2);margin-right:8px;vertical-align:middle">PRESETS</span>
+        </div>
         <div class="edit-layout">
           <div class="edit-canvas">
             <div class="edit-preview" id="editPreview">Preview (RawPulse pipeline)</div>
@@ -1079,9 +1083,16 @@ document.querySelectorAll('.edit-panel input[type=range]').forEach(s=>{
     if(name.includes('sharp'))editState.sharpening=v;
     if(name.includes('noise'))editState.noise=v;
     if(name.includes('amount'))editState.grain=v;
-    applyEditsToPreview();
+    debouncedApply();
   });
 });
+
+// Debounce for mobile performance — process at most every 80ms
+let applyTimer=null;
+function debouncedApply(){
+  if(applyTimer)clearTimeout(applyTimer);
+  applyTimer=setTimeout(()=>{blurredL=null;applyEditsToPreview();},80);
+}
 
 // Export edited photo
 function exportEditedPhoto(){
@@ -2476,6 +2487,110 @@ function downloadPro(){const a=document.createElement('a');a.download='ymshots-p
 // Add new views to nav
 viewLabels.babyglow='BabyGlow';viewLabels.agewarp='AgeWarp';viewLabels.familytree='FamilyTree';viewLabels.timelapse='TimeLapse';viewLabels.petportrait='Pet Portrait';
 viewLabels.photorevive='PhotoRevive';viewLabels.collage='Collage';viewLabels.backdrop='BackdropAI';viewLabels.protools='ProTools';
+
+// ═══ ONE-TAP PRESETS (LookVault) ═══
+const PRESETS = [
+  { id:'original', name:'Original', nameFr:'Original', values:{} },
+  { id:'warm-portrait', name:'Warm Portrait', nameFr:'Portrait Chaud',
+    values:{exposure:0.3,temperature:6200,shadows:25,contrast:10,vibrance:15,saturation:5,clarity:8,grain:5} },
+  { id:'moody-film', name:'Moody Film', nameFr:'Film Sombre',
+    values:{exposure:-0.2,temperature:5200,contrast:20,shadows:-15,blacks:-20,saturation:-15,grain:25,clarity:15} },
+  { id:'clean-bright', name:'Clean & Bright', nameFr:'Net & Lumineux',
+    values:{exposure:0.5,highlights:-20,shadows:30,whites:15,contrast:5,vibrance:20,clarity:10,temperature:5800} },
+  { id:'golden-hour', name:'Golden Hour', nameFr:'Heure Dorée',
+    values:{exposure:0.2,temperature:7000,tint:5,highlights:-10,shadows:20,vibrance:25,saturation:10,contrast:8} },
+  { id:'bw-classic', name:'B&W Classic', nameFr:'N&B Classique',
+    values:{saturation:-100,contrast:30,clarity:20,grain:15,blacks:-10} },
+  { id:'bw-high-contrast', name:'B&W Drama', nameFr:'N&B Dramatique',
+    values:{saturation:-100,contrast:50,clarity:30,blacks:-25,highlights:-15,grain:20} },
+  { id:'vintage-fade', name:'Vintage Fade', nameFr:'Vintage Délavé',
+    values:{exposure:0.1,contrast:-10,blacks:30,saturation:-20,temperature:6000,grain:20,highlights:-10} },
+  { id:'cinematic', name:'Cinematic', nameFr:'Cinématique',
+    values:{exposure:-0.1,contrast:15,highlights:-20,shadows:10,temperature:5800,tint:-5,saturation:-10,clarity:20,grain:10} },
+  { id:'airy-light', name:'Airy & Light', nameFr:'Aérien & Clair',
+    values:{exposure:0.6,shadows:40,highlights:-15,contrast:-5,vibrance:10,temperature:5600,blacks:20} },
+  { id:'deep-teal', name:'Deep Teal', nameFr:'Bleu Profond',
+    values:{temperature:4800,tint:-10,contrast:15,shadows:10,vibrance:20,saturation:5,clarity:10} },
+  { id:'sunset-glow', name:'Sunset Glow', nameFr:'Éclat Coucher',
+    values:{temperature:7500,exposure:0.1,highlights:-10,shadows:15,vibrance:30,saturation:15,contrast:10} },
+  { id:'soft-skin', name:'Soft Skin', nameFr:'Peau Douce',
+    values:{exposure:0.2,shadows:15,contrast:-5,clarity:-15,vibrance:10,temperature:5800,highlights:-10} },
+  { id:'street-grit', name:'Street Grit', nameFr:'Rue Brute',
+    values:{contrast:25,clarity:30,saturation:-10,grain:30,blacks:-15,shadows:-10,sharpening:40} },
+  { id:'wedding-soft', name:'Wedding Soft', nameFr:'Mariage Doux',
+    values:{exposure:0.3,highlights:-15,shadows:20,contrast:5,vibrance:15,temperature:6000,clarity:5,grain:3} },
+  { id:'matte-film', name:'Matte Film', nameFr:'Film Mat',
+    values:{blacks:35,contrast:10,saturation:-15,temperature:5600,grain:15,shadows:10} },
+];
+
+function renderPresets(){
+  const bar=document.getElementById('presetsBar');
+  if(!bar||!currentEditFile)return;
+  bar.style.display='block';
+  // Keep the label, clear preset buttons
+  while(bar.children.length>1)bar.removeChild(bar.lastChild);
+
+  PRESETS.forEach(p=>{
+    const btn=document.createElement('button');
+    btn.style.cssText='display:inline-block;padding:6px 14px;margin:0 3px;border-radius:6px;border:1px solid #222;background:'+(p.id==='original'?'#222':'var(--surface)')+';color:'+(p.id==='original'?'var(--accent)':'var(--muted)')+';font-size:11px;cursor:pointer;white-space:nowrap;vertical-align:middle;transition:all .15s';
+    btn.textContent=currentLang==='fr'?p.nameFr:p.name;
+    btn.onmouseenter=()=>{if(p.id!=='original')btn.style.borderColor='var(--accent)';};
+    btn.onmouseleave=()=>{btn.style.borderColor='#222';};
+    btn.onclick=()=>{
+      applyPreset(p);
+      // Highlight active preset
+      bar.querySelectorAll('button').forEach(b=>{b.style.background='var(--surface)';b.style.color='var(--muted)';});
+      btn.style.background='rgba(224,148,58,0.15)';btn.style.color='var(--accent)';
+    };
+    bar.appendChild(btn);
+  });
+}
+
+function applyPreset(preset){
+  // Reset to defaults first
+  Object.assign(editState,DEFAULT_STATE);
+  // Apply preset values
+  if(preset.values){
+    Object.entries(preset.values).forEach(([k,v])=>{
+      if(k in editState)editState[k]=v;
+    });
+  }
+  // Update slider positions to match
+  document.querySelectorAll('.edit-panel input[type=range]').forEach(s=>{
+    const name=s.parentElement?.querySelector('.slider-name')?.textContent?.toLowerCase()||'';
+    let val=0;
+    if(name.includes('expos'))val=editState.exposure*10;
+    else if(name.includes('high'))val=editState.highlights;
+    else if(name.includes('shadow'))val=editState.shadows;
+    else if(name.includes('white'))val=editState.whites;
+    else if(name.includes('black'))val=editState.blacks;
+    else if(name.includes('contrast'))val=editState.contrast;
+    else if(name.includes('clar'))val=editState.clarity;
+    else if(name.includes('vibra'))val=editState.vibrance;
+    else if(name.includes('satu'))val=editState.saturation;
+    else if(name.includes('temp')){val=editState.temperature;}
+    else if(name.includes('tint'))val=editState.tint;
+    else if(name.includes('sharp'))val=editState.sharpening;
+    else if(name.includes('noise'))val=editState.noise||0;
+    else if(name.includes('amount'))val=editState.grain;
+    s.value=val;
+    const valEl=s.parentElement?.querySelector('.slider-val');
+    if(valEl){
+      valEl.textContent=name.includes('temp')?val+'K':val;
+      valEl.className=val!=0&&val!=5500?'slider-val changed':'slider-val';
+    }
+  });
+  // Re-render
+  blurredL=null; // Clear clarity cache
+  applyEditsToPreview();
+}
+
+// Show presets when photo loads
+const origLoadPhoto=loadPhotoForEdit;
+loadPhotoForEdit=function(file){
+  origLoadPhoto(file);
+  setTimeout(renderPresets,500); // Wait for canvas to be ready
+};
 
 // ═══ AUTOMATION — Analytics, Error Reporting, Auto-save ═══
 
